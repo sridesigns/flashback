@@ -228,7 +228,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           ) : <div className="w-12" />}
           <div className="text-center">
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-burnt-orange tracking-tight leading-tight">
-              Flashback
+              CitoFoto
             </h1>
             <p className="font-sans text-xs text-warm-brown mt-0.5 tracking-widest uppercase">
               Regular Booth

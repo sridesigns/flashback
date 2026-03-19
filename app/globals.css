@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-playfair: "Playfair Display", Georgia, serif;
+  --font-fraunces: "Fraunces", Georgia, serif;
   --font-inter: "Inter", system-ui, sans-serif;
 }
 

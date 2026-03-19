@@ -54,7 +54,7 @@ function SiteHeader({ onRegular }: { onRegular: () => void }) {
         {/* Wordmark */}
         <div className="flex items-center gap-2.5">
           <FilmFrameIcon />
-          <span className="font-serif text-xl font-bold text-burnt-orange tracking-tight">Flashback</span>
+          <span className="font-serif text-xl font-bold text-burnt-orange tracking-tight">CitoFoto</span>
         </div>
 
         {/* Nav CTA */}
@@ -322,7 +322,7 @@ function SiteFooter() {
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <FilmFrameIcon className="text-warm-brown/40" />
-          <span className="font-serif text-sm font-bold text-warm-brown/50">Flashback</span>
+          <span className="font-serif text-sm font-bold text-warm-brown/50">CitoFoto</span>
         </div>
         <p className="font-sans text-xs text-warm-brown/30 text-center">
           A retro photo booth for the internet. Made with ♥

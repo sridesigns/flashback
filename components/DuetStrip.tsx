@@ -89,7 +89,7 @@ function roundRect(
 
 function nextStripNumber(): number {
   try {
-    const key = "flashback_strip_count";
+    const key = "citofoto_strip_count";
     const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
     localStorage.setItem(key, String(n));
     return n;
@@ -175,7 +175,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = "#C9A84C";
     ctx.font = `bold 20px Georgia, "Times New Roman", serif`;
-    ctx.fillText("FLASHBACK", W / 2, padding + 20);
+    ctx.fillText("CITOFOTO", W / 2, padding + 20);
     ctx.fillStyle = "#7a5535";
     ctx.font = `600 9px Arial, sans-serif`;
     ctx.letterSpacing = "4px";
@@ -274,7 +274,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.fillStyle = "#6b4828";
     ctx.font = `10px Arial, sans-serif`;
     ctx.letterSpacing = "2px";
-    ctx.fillText("flashback.vercel.app", W / 2, H - footerH + 20);
+    ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 20);
     ctx.letterSpacing = "0px";
     ctx.fillStyle = "#3d2810";
     ctx.font = `9px monospace`;
@@ -285,7 +285,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
 
     const n        = nextStripNumber();
     const date     = formatDate(now);
-    const filename = `Flashback_Duet_${n}_${date}.jpg`;
+    const filename = `CitoFoto_Duet_${n}_${date}.jpg`;
 
     const link = document.createElement("a");
     link.download = filename;
@@ -313,7 +313,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
         <div className="mx-5 flex flex-col">
           {/* Header */}
           <div className="text-center py-3 border-b border-warm-brown/20">
-            <p className="font-serif text-gold text-sm font-bold tracking-wider uppercase">Flashback</p>
+            <p className="font-serif text-gold text-sm font-bold tracking-wider uppercase">CitoFoto</p>
             <p className="font-sans text-warm-brown/60 text-[9px] tracking-[0.2em] uppercase mt-0.5">Duet Booth</p>
           </div>
 

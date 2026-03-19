@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-playfair",
+  variable: "--font-fraunces",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "900"],
+  style: ["normal", "italic"],
 });
 
 const inter = Inter({
@@ -17,11 +18,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Flashback — Retro Photo Booth",
+  title: "CitoFoto — Retro Photo Booth",
   description: "Strike a pose! A fun retro-style photo booth that takes 4 snaps and creates a classic photo strip.",
   keywords: ["photo booth", "retro", "film", "photo strip", "camera"],
   openGraph: {
-    title: "Flashback — Retro Photo Booth",
+    title: "CitoFoto — Retro Photo Booth",
     description: "Strike a pose! A fun retro-style photo booth.",
     type: "website",
   },
@@ -41,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body>{children}</body>
     </html>
   );

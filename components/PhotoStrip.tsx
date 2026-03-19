@@ -64,7 +64,7 @@ function roundRect(
 /** localStorage-backed counter so each saved strip gets a unique number. */
 function nextStripNumber(): number {
   try {
-    const key = "flashback_strip_count";
+    const key = "citofoto_strip_count";
     const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
     localStorage.setItem(key, String(n));
     return n;
@@ -256,7 +256,7 @@ export default function PhotoStrip({ photos }: PhotoStripProps) {
     ctx.fillStyle = "#6b4828";
     ctx.font = `10px Arial, sans-serif`;
     ctx.letterSpacing = "2px";
-    ctx.fillText("flashback.vercel.app", W / 2, H - footerH + 20);
+    ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 20);
     ctx.letterSpacing = "0px";
 
     ctx.fillStyle = "#3d2810";
@@ -270,7 +270,7 @@ export default function PhotoStrip({ photos }: PhotoStripProps) {
     // ── Download ───────────────────────────────────────────────────────────
     const n    = nextStripNumber();
     const date = formatDate(now);
-    const filename = `Flashback_${n}_${date}.jpg`;
+    const filename = `CitoFoto_${n}_${date}.jpg`;
 
     const link = document.createElement("a");
     link.download = filename;
@@ -305,7 +305,7 @@ export default function PhotoStrip({ photos }: PhotoStripProps) {
           {/* Header */}
           <div className="text-center py-3 border-b border-warm-brown/20">
             <p className="font-serif text-gold text-sm font-bold tracking-wider uppercase">
-              Flashback
+              CitoFoto
             </p>
             <p className="font-sans text-warm-brown/60 text-[9px] tracking-[0.2em] uppercase mt-0.5">
               Retro Photo Booth
