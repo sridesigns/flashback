@@ -15,7 +15,11 @@ const POSE_HINTS = [
   "Be yourself — have fun!",
 ];
 
-export default function PhotoBooth() {
+interface PhotoBoothProps {
+  onHome?: () => void;
+}
+
+export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -203,21 +207,35 @@ export default function PhotoBooth() {
 
   const handleHome = () => {
     stopCamera();
-    setState("idle");
     setPhotos([]);
     setCurrentShot(0);
+    if (onHome) {
+      onHome();
+    } else {
+      setState("idle");
+    }
   };
 
   return (
     <div className="w-full min-h-screen flex flex-col items-center">
       {/* Header */}
       <header className="w-full text-center py-3 md:py-5 px-4 border-b border-parchment/60 bg-cream sticky top-0 z-20">
-        <h1 className="font-serif text-3xl md:text-4xl font-bold text-burnt-orange tracking-tight leading-tight">
-          Flashback
-        </h1>
-        <p className="font-sans text-sm text-warm-brown mt-1 tracking-widest uppercase">
-          Retro Photo Booth
-        </p>
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          {onHome ? (
+            <button onClick={onHome} className="font-sans text-xs text-warm-brown/60 hover:text-warm-brown transition-colors px-2 py-1">
+              ← Back
+            </button>
+          ) : <div className="w-12" />}
+          <div className="text-center">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-burnt-orange tracking-tight leading-tight">
+              Flashback
+            </h1>
+            <p className="font-sans text-xs text-warm-brown mt-0.5 tracking-widest uppercase">
+              Regular Booth
+            </p>
+          </div>
+          <div className="w-12" />
+        </div>
       </header>
 
       <div className="w-full max-w-lg px-4 pb-6 flex flex-col items-center gap-4 mt-4">
