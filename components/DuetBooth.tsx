@@ -318,8 +318,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             <div className="text-center">
               <h2 className="font-serif text-2xl font-bold text-burnt-orange">Your partner is ready!</h2>
               <p className="font-sans text-sm text-warm-brown mt-1">
-                Their photo will appear as a ghost on the left side of your viewfinder.
-                <br />Position yourself on the <strong>right</strong>.
+                Their photo will appear as a ghost across your viewfinder.
+                Position yourself anywhere — complement their pose.
               </p>
             </div>
 
@@ -335,8 +335,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             <ol className="font-sans text-sm text-warm-brown space-y-1.5 text-left max-w-xs w-full">
               {[
                 "Allow camera access",
-                "See your partner's ghost on the left",
-                "Position yourself on the right side",
+                "See your partner's ghost across the full frame",
+                "Position yourself to complement their pose",
                 "The booth takes 4 shots automatically",
               ].map((step, i) => (
                 <li key={i} className="flex gap-2.5 items-start">
@@ -402,27 +402,23 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                 playsInline muted autoPlay
               />
 
-              {/* Ghost overlay: partner's photo on left half */}
+              {/* Ghost overlay: partner's full photo shown at low opacity so you
+                  can position yourself anywhere relative to them */}
               {ghostPhoto && (
                 <>
-                  <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden z-10 pointer-events-none">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={ghostPhoto}
-                      alt="Partner ghost"
-                      className="w-full h-full object-cover opacity-50"
-                    />
-                    {/* Subtle ghost tint */}
-                    <div className="absolute inset-0 bg-cream/5" />
-                  </div>
-                  {/* Center divider */}
-                  <div className="absolute inset-y-0 left-1/2 w-px bg-gold/50 z-20 pointer-events-none" />
-                  {/* Side labels */}
-                  <div className="absolute top-2 left-0 w-1/2 flex justify-center z-20 pointer-events-none">
-                    <span className="font-mono text-[9px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded tracking-wider">PARTNER</span>
-                  </div>
-                  <div className="absolute top-2 right-0 w-1/2 flex justify-center z-20 pointer-events-none">
-                    <span className="font-mono text-[9px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded tracking-wider">YOU →</span>
+                  {/* Full-frame ghost — no clipping, mirrors the camera if front-facing */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ghostPhoto}
+                    alt="Partner ghost"
+                    className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
+                    style={{ opacity: 0.38 }}
+                  />
+                  {/* Label centred at top */}
+                  <div className="absolute top-2 left-0 right-0 flex justify-center z-20 pointer-events-none">
+                    <span className="font-mono text-[9px] text-white/80 bg-black/50 px-2 py-0.5 rounded tracking-wider">
+                      PARTNER GHOST — POSITION YOURSELF ANYWHERE
+                    </span>
                   </div>
                 </>
               )}
@@ -477,7 +473,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               {duetState === "countdown" && (
                 <div className="flex-1 text-center font-sans text-sm text-warm-brown">
                   Pose {currentShot + 1} of {TOTAL_SHOTS}
-                  {role === "partner" && " — position right of the ghost!"}
+                  {role === "partner" && " — complement your partner!"}
                 </div>
               )}
             </div>
