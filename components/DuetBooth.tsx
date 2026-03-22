@@ -9,17 +9,14 @@ import DuetStrip from "./DuetStrip";
 
 type DuetRole  = "initiator" | "partner" | "viewer";
 type DuetState =
-  | "loading"       // checking URL hash on mount
-  | "p1-idle"       // Person 1 landing
-  | "p2-intro"      // Person 2: intro before camera
-  | "permission"    // requesting camera access
-  | "preview"       // live camera feed
-  | "countdown"     // shooting sequence
-  | "p1-done"       // Person 1 done — share link screen
-  | "final";        // combined strip (Person 2 after shoot, or Person 1 opening final link)
+  | "loading"    // checking URL hash / fetching blob
+  | "camera"     // camera live (replaces p1-idle, p2-intro, permission, preview)
+  | "countdown"  // shooting sequence
+  | "p1-done"    // Person 1 done — share link screen
+  | "final";     // combined strip
 
-const TOTAL_SHOTS     = 4;
-const COUNTDOWN_SECS  = 3;
+const TOTAL_SHOTS    = 4;
+const COUNTDOWN_SECS = 3;
 
 const DUET_HINTS = [
   "Strike a pose!",
@@ -38,56 +35,23 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [duetState, setDuetState] = useState<DuetState>("loading");
-  const [role,      setRole]      = useState<DuetRole>("initiator");
-  const [facingMode,    setFacingMode]    = useState<"user" | "environment">("user");
-  const [hasMultiCam,   setHasMultiCam]  = useState(false);
+  const [duetState,  setDuetState]  = useState<DuetState>("loading");
+  const [role,       setRole]       = useState<DuetRole>("initiator");
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [hasMultiCam,setHasMultiCam]= useState(false);
+  const [camReady,   setCamReady]   = useState(false); // camera stream is live
+  const [camError,   setCamError]   = useState<string | null>(null);
 
-  // leftPhotos = initiator (Person 1), rightPhotos = partner (Person 2)
   const [leftPhotos,  setLeftPhotos]  = useState<string[]>([]); // P1
   const [rightPhotos, setRightPhotos] = useState<string[]>([]); // P2
 
-  const [countdown,    setCountdown]    = useState(COUNTDOWN_SECS);
-  const [currentShot,  setCurrentShot]  = useState(0);
-  const [showFlash,    setShowFlash]    = useState(false);
-  const [shareLink,    setShareLink]    = useState<string | null>(null);
-  const [finalLink,    setFinalLink]    = useState<string | null>(null);
-  const [copied,       setCopied]       = useState<"share" | "final" | null>(null);
-  const [error,        setError]        = useState<string | null>(null);
-  const [linkLoading,  setLinkLoading]  = useState(false);
-
-  // ── On mount: detect URL hash ─────────────────────────────────────────────
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.startsWith("#duet=")) { setDuetState("p1-idle"); return; }
-
-    const value = hash.slice(6);
-
-    const apply = (payload: { phase: string; p1: string[]; p2?: string[] } | null) => {
-      if (payload?.phase === "p1") {
-        setLeftPhotos(payload.p1);
-        setRole("partner");
-        setDuetState("p2-intro");
-      } else if (payload?.phase === "final" && payload.p2) {
-        setLeftPhotos(payload.p1);
-        setRightPhotos(payload.p2);
-        setRole("viewer");
-        setDuetState("final");
-      } else {
-        setDuetState("p1-idle");
-      }
-    };
-
-    if (value.startsWith("jb_")) {
-      // Short link — fetch from blob store
-      downloadBlob(value.slice(3))
-        .then(data => apply(data as { phase: string; p1: string[]; p2?: string[] }))
-        .catch(() => setDuetState("p1-idle"));
-    } else {
-      // Legacy: full base64-encoded payload in URL
-      apply(decodeFromUrl(value));
-    }
-  }, []);
+  const [countdown,   setCountdown]   = useState(COUNTDOWN_SECS);
+  const [currentShot, setCurrentShot] = useState(0);
+  const [showFlash,   setShowFlash]   = useState(false);
+  const [shareLink,   setShareLink]   = useState<string | null>(null);
+  const [finalLink,   setFinalLink]   = useState<string | null>(null);
+  const [copied,      setCopied]      = useState<"share" | "final" | null>(null);
+  const [linkLoading, setLinkLoading] = useState(false);
 
   // ── Camera enumeration ────────────────────────────────────────────────────
   useEffect(() => {
@@ -100,34 +64,71 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
+    setCamReady(false);
   }, []);
 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
   const startCamera = useCallback(async (facing: "user" | "environment" = "user") => {
     stopCamera();
-    setError(null);
-    setDuetState("permission");
+    setCamError(null);
+    setCamReady(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
-      setDuetState("preview");
+      setCamReady(true);
     } catch {
-      setError("Camera access denied. Please allow permissions and try again.");
-      setDuetState(role === "partner" ? "p2-intro" : "p1-idle");
+      setCamError("Camera access denied. Please allow permissions and try again.");
     }
-  }, [role, stopCamera]);
+  }, [stopCamera]);
 
-  // Attach stream once video element mounts
+  // Attach stream once video element is in DOM
   useEffect(() => {
-    if ((duetState === "preview" || duetState === "countdown") && videoRef.current && streamRef.current) {
+    if (camReady && (duetState === "camera" || duetState === "countdown") && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
       videoRef.current.play().catch(console.error);
     }
-  }, [duetState]);
+  }, [camReady, duetState]);
+
+  // ── On mount: detect URL hash ─────────────────────────────────────────────
+  useEffect(() => {
+    const hash = window.location.hash;
+
+    const applyPayload = (payload: { phase: string; p1: string[]; p2?: string[] } | null) => {
+      if (payload?.phase === "p1") {
+        setLeftPhotos(payload.p1);
+        setRole("partner");
+      } else if (payload?.phase === "final" && payload.p2) {
+        setLeftPhotos(payload.p1);
+        setRightPhotos(payload.p2);
+        setRole("viewer");
+        setDuetState("final");
+        return; // viewer: no camera needed
+      }
+      // initiator or partner: go to camera
+      setDuetState("camera");
+      startCamera("user");
+    };
+
+    if (!hash.startsWith("#duet=")) {
+      setDuetState("camera");
+      startCamera("user");
+      return;
+    }
+
+    const value = hash.slice(6);
+    if (value.startsWith("jb_")) {
+      downloadBlob(value.slice(3))
+        .then(data => applyPayload(data as { phase: string; p1: string[]; p2?: string[] }))
+        .catch(() => { setDuetState("camera"); startCamera("user"); });
+    } else {
+      applyPayload(decodeFromUrl(value));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Flip camera ──────────────────────────────────────────────────────────
   const flipCamera = useCallback(async () => {
@@ -160,7 +161,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
         if (dataUrl) {
           if (role === "initiator") {
             setLeftPhotos(prev => {
-              const next = [...prev, dataUrl];
+              const next     = [...prev, dataUrl];
               const nextShot = shot + 1;
               if (nextShot < TOTAL_SHOTS) {
                 setCurrentShot(nextShot);
@@ -172,9 +173,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               return next;
             });
           } else {
-            // partner
             setRightPhotos(prev => {
-              const next = [...prev, dataUrl];
+              const next     = [...prev, dataUrl];
               const nextShot = shot + 1;
               if (nextShot < TOTAL_SHOTS) {
                 setCurrentShot(nextShot);
@@ -191,47 +191,36 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
     }, 1000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duetState, currentShot]);
 
-  // ── Generate Person 1 share link (after p1-done) ─────────────────────────
+  // ── Generate Person 1 share link ──────────────────────────────────────────
   useEffect(() => {
     if (duetState !== "p1-done" || leftPhotos.length !== TOTAL_SHOTS || shareLink) return;
     setLinkLoading(true);
-    Promise.all(leftPhotos.map(compressForUrl)).then(async (compressed) => {
+    Promise.all(leftPhotos.map(compressForUrl)).then(async compressed => {
       const payload: { phase: "p1"; p1: string[] } = { phase: "p1", p1: compressed };
       try {
         const id = await uploadBlob(payload);
         setShareLink(`${window.location.origin}/#duet=jb_${id}`);
       } catch {
-        // Fallback: embed in URL directly
-        const encoded = encodeForUrl(payload);
-        setShareLink(`${window.location.origin}/#duet=${encoded}`);
+        setShareLink(`${window.location.origin}/#duet=${encodeForUrl(payload)}`);
       }
       setLinkLoading(false);
     });
   }, [duetState, leftPhotos, shareLink]);
 
-  // ── Start the countdown (resets shot counter to 0) ───────────────────────
-  const startCountdown = useCallback(() => {
-    setCurrentShot(0);
-    setCountdown(COUNTDOWN_SECS);
-    setDuetState("countdown");
-  }, []);
-
-  // ── Generate final link for partner to share back ─────────────────────────
+  // ── Generate final link (partner → initiator) ─────────────────────────────
   useEffect(() => {
     if (duetState !== "final" || role !== "partner" || rightPhotos.length !== TOTAL_SHOTS || finalLink) return;
     setLinkLoading(true);
-    Promise.all(rightPhotos.map(compressForUrl)).then(async (compressedP2) => {
-      // leftPhotos already compressed (arrived via blob store or URL)
+    Promise.all(rightPhotos.map(compressForUrl)).then(async compressedP2 => {
       const payload: { phase: "final"; p1: string[]; p2: string[] } = { phase: "final", p1: leftPhotos, p2: compressedP2 };
       try {
         const id = await uploadBlob(payload);
         setFinalLink(`${window.location.origin}/#duet=jb_${id}`);
       } catch {
-        const encoded = encodeForUrl(payload);
-        setFinalLink(`${window.location.origin}/#duet=${encoded}`);
+        setFinalLink(`${window.location.origin}/#duet=${encodeForUrl(payload)}`);
       }
       setLinkLoading(false);
     });
@@ -246,354 +235,78 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
     } catch { /* ignore */ }
   }, []);
 
-  // ── Handle home ───────────────────────────────────────────────────────────
+  // ── Home + retake ─────────────────────────────────────────────────────────
   const handleHome = useCallback(() => {
     stopCamera();
     window.history.replaceState(null, "", window.location.pathname);
     onHome();
   }, [stopCamera, onHome]);
 
-  // ── Reset for retake (initiator) ─────────────────────────────────────────
   const handleRetake = useCallback(() => {
     setLeftPhotos([]);
     setCurrentShot(0);
     setCountdown(COUNTDOWN_SECS);
     setShareLink(null);
+    setDuetState("camera");
     startCamera(facingMode);
   }, [facingMode, startCamera]);
 
-  // ── Ghost to show during partner's countdown ──────────────────────────────
+  // Ghost: partner's photo shown during countdown
   const ghostPhoto = role === "partner" && leftPhotos.length > 0
     ? leftPhotos[Math.min(currentShot, leftPhotos.length - 1)]
     : null;
 
+  const isLive = duetState === "camera" || duetState === "countdown";
+
   // ── Render ────────────────────────────────────────────────────────────────
-  return (
-    <div className="w-full min-h-screen flex flex-col items-center">
-      {/* Header */}
-      <header className="w-full text-center py-3 md:py-5 px-4 border-b border-parchment/60 bg-cream sticky top-0 z-20">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <button onClick={handleHome} className="font-sans text-xs text-warm-brown/60 hover:text-warm-brown transition-colors px-2 py-1">
-            ← Back
-          </button>
-          <div className="text-center">
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-burnt-orange tracking-tight leading-tight">
-              CitoFoto
-            </h1>
-            <p className="font-sans text-xs text-warm-brown mt-0.5 tracking-widest uppercase">
-              Duet Booth
-            </p>
-          </div>
-          <div className="w-12" /> {/* spacer */}
-        </div>
-      </header>
 
-      <div className="w-full max-w-lg px-4 pb-8 flex flex-col items-center gap-4 mt-4">
-
-        {/* Loading */}
-        {duetState === "loading" && (
-          <div className="flex flex-col items-center gap-3 py-16">
+  // Loading (fetching blob from URL)
+  if (duetState === "loading") {
+    return (
+      <div className="w-full min-h-screen flex flex-col">
+        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-burnt-orange border-t-transparent rounded-full animate-spin" />
+            <p className="font-sans text-xs text-warm-brown/50 uppercase tracking-wider">Loading…</p>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
-        {/* ── Person 1: Idle ─────────────────────────────────────────────── */}
-        {duetState === "p1-idle" && (
-          <div className="flex flex-col items-center gap-6 w-full py-2 page-transition">
-            <DuetIllustration />
-            <div className="text-center max-w-xs">
-              <h2 className="font-serif text-xl font-semibold text-dark-brown mb-1">How Duet Booth works</h2>
-              <p className="font-sans text-sm text-warm-brown/80 mb-4 leading-relaxed">
-                Two people, two places — one shared photo strip.
-              </p>
-              <ol className="font-sans text-sm text-warm-brown space-y-2 text-left">
-                {[
-                  "You shoot 4 poses — a link is generated",
-                  "Share the link with your partner",
-                  "They see your ghost photo and shoot alongside",
-                  "You both get the combined strip to download",
-                ].map((step, i) => (
-                  <li key={i} className="flex gap-2.5 items-start">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-burnt-orange/10 text-burnt-orange font-semibold text-xs flex items-center justify-center mt-0.5">
-                      {i + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            {error && <ErrorBanner message={error} />}
-
-            <button
-              onClick={() => startCamera(facingMode)}
-              className="leather-btn leather-btn-primary font-sans font-semibold text-lg py-4 px-10 rounded-xl"
-            >
-              Start My Shoot
-            </button>
-            <p className="font-sans text-xs text-warm-brown/50 text-center max-w-[240px]">
-              You go first. Your partner joins after.
-            </p>
+  // Final combined strip
+  if (duetState === "final" && leftPhotos.length > 0 && rightPhotos.length > 0) {
+    return (
+      <div className="w-full min-h-screen flex flex-col page-transition">
+        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
+          <div className="flex justify-center">
+            <DuetStrip p1Photos={leftPhotos} p2Photos={rightPhotos} />
           </div>
-        )}
-
-        {/* ── Person 2: Intro ────────────────────────────────────────────── */}
-        {duetState === "p2-intro" && (
-          <div className="flex flex-col items-center gap-5 w-full py-2 page-transition">
-            <div className="text-center">
-              <h2 className="font-serif text-2xl font-bold text-burnt-orange">Your partner is ready!</h2>
-              <p className="font-sans text-sm text-warm-brown mt-1">
-                Their photo will appear as a ghost across your viewfinder.
-                Position yourself anywhere — complement their pose.
-              </p>
-            </div>
-
-            {/* Preview of partner's first photo */}
-            {leftPhotos[0] && (
-              <div className="w-48 rounded-lg overflow-hidden border-4 border-dark-brown shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={leftPhotos[0]} alt="Partner's first shot" className="w-full block bw-photo" style={{ aspectRatio: "4/3", objectFit: "cover" }} />
-                <div className="bg-dark-brown text-gold text-center text-[10px] font-mono py-1 tracking-widest">YOUR PARTNER</div>
-              </div>
-            )}
-
-            <ol className="font-sans text-sm text-warm-brown space-y-1.5 text-left max-w-xs w-full">
-              {[
-                "Allow camera access",
-                "See your partner's ghost across the full frame",
-                "Position yourself to complement their pose",
-                "The booth takes 4 shots automatically",
-              ].map((step, i) => (
-                <li key={i} className="flex gap-2.5 items-start">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-burnt-orange/10 text-burnt-orange font-semibold text-xs flex items-center justify-center mt-0.5">
-                    {i + 1}
-                  </span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-
-            {error && <ErrorBanner message={error} />}
-
-            <button
-              onClick={() => startCamera(facingMode)}
-              className="leather-btn leather-btn-primary font-sans font-semibold text-lg py-4 px-10 rounded-xl"
-            >
-              Open My Camera
-            </button>
-          </div>
-        )}
-
-        {/* ── Camera permission loading ──────────────────────────────────── */}
-        {duetState === "permission" && (
-          <div className="flex flex-col items-center gap-4 py-12">
-            <div className="w-12 h-12 border-4 border-burnt-orange border-t-transparent rounded-full animate-spin" />
-            <p className="font-sans text-warm-brown text-sm">Accessing camera…</p>
-          </div>
-        )}
-
-        {/* ── Camera: preview + countdown ────────────────────────────────── */}
-        {(duetState === "preview" || duetState === "countdown") && (
-          <div className="w-full flex flex-col items-center gap-4">
-            {/* Shot progress dots */}
-            <div className="flex gap-2 items-center">
-              {Array.from({ length: TOTAL_SHOTS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
-                    i < currentShot
-                      ? "bg-burnt-orange border-burnt-orange"
-                      : i === currentShot && duetState === "countdown"
-                      ? "bg-gold border-gold scale-125"
-                      : "bg-transparent border-warm-brown/40"
-                  }`}
-                />
-              ))}
-              <span className="font-sans text-xs text-warm-brown ml-2">
-                {currentShot + 1} / {TOTAL_SHOTS}
-              </span>
-            </div>
-
-            {/* Viewfinder */}
-            <div
-              className="relative w-full overflow-hidden rounded-lg border-4 border-dark-brown shadow-2xl bg-film-black"
-              style={{ aspectRatio: "4/3" }}
-            >
-              {/* Live camera */}
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
-                playsInline muted autoPlay
-              />
-
-              {/* Ghost overlay: partner's full photo shown at low opacity so you
-                  can position yourself anywhere relative to them */}
-              {ghostPhoto && (
-                <>
-                  {/* Full-frame ghost — no clipping, mirrors the camera if front-facing */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ghostPhoto}
-                    alt="Partner ghost"
-                    className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
-                    style={{ opacity: 0.38 }}
-                  />
-                  {/* Label centred at top */}
-                  <div className="absolute top-2 left-0 right-0 flex justify-center z-20 pointer-events-none">
-                    <span className="font-mono text-[9px] text-white/80 bg-black/50 px-2 py-0.5 rounded tracking-wider">
-                      PARTNER GHOST — POSITION YOURSELF ANYWHERE
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* Countdown number */}
-              {duetState === "countdown" && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30">
-                  <div className="bg-black/30 rounded-full w-24 h-24 flex items-center justify-center animate-count-pulse">
-                    <span className="font-serif text-6xl font-bold text-white drop-shadow-lg">{countdown}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Pose hint */}
-              {duetState === "countdown" && (
-                <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
-                  <span className="bg-black/50 text-white font-sans text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
-                    {DUET_HINTS[currentShot]}
-                  </span>
-                </div>
-              )}
-
-              {/* Flash */}
-              {showFlash && <div className="absolute inset-0 bg-white z-40 animate-flash pointer-events-none" />}
-
-              {/* Film frame corners */}
-              <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-gold/70" />
-              <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-gold/70" />
-              <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-gold/70" />
-              <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-gold/70" />
-            </div>
-
-            {/* Controls */}
-            <div className="flex gap-3 w-full">
-              {duetState === "preview" && (
-                <>
-                  <button
-                    onClick={startCountdown}
-                    className="leather-btn leather-btn-primary flex-1 font-sans font-semibold text-base py-3.5 px-6 rounded-lg"
-                  >
-                    {role === "partner" ? "Start My Shoot" : "Start Shoot"}
-                  </button>
-                  {hasMultiCam && (
-                    <button onClick={flipCamera} title="Flip camera"
-                      className="leather-btn leather-btn-secondary font-sans text-sm py-3.5 px-4 rounded-lg"
-                    >
-                      <FlipIcon />
-                    </button>
-                  )}
-                </>
-              )}
-              {duetState === "countdown" && (
-                <div className="flex-1 text-center font-sans text-sm text-warm-brown">
-                  Pose {currentShot + 1} of {TOTAL_SHOTS}
-                  {role === "partner" && " — complement your partner!"}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Person 1 Done: share link screen ───────────────────────────── */}
-        {duetState === "p1-done" && (
-          <div className="w-full flex flex-col items-center gap-5 page-transition">
-            <div className="text-center">
-              <h2 className="font-serif text-2xl font-bold text-burnt-orange">Your shots are in!</h2>
-              <p className="font-sans text-sm text-warm-brown mt-1">
-                Share this link with your partner so they can join the booth.
-              </p>
-            </div>
-
-            {/* Thumbnail grid */}
-            <div className="grid grid-cols-2 gap-2 w-full max-w-[280px]">
-              {leftPhotos.map((photo, i) => (
-                <div key={i} className="relative rounded overflow-hidden border-2 border-dark-brown">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo} alt={`Shot ${i + 1}`} className="w-full block bw-photo" style={{ aspectRatio: "4/3", objectFit: "cover" }} />
-                  <span className="absolute top-1 left-1 bg-black/60 text-gold text-[9px] font-mono font-bold w-4 h-4 flex items-center justify-center rounded-sm">
-                    {i + 1}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Share link */}
-            <div className="w-full max-w-sm flex flex-col gap-2">
-              <p className="font-sans text-xs text-warm-brown/70 uppercase tracking-wider">Partner link</p>
-              {linkLoading ? (
-                <div className="flex items-center gap-2 text-sm text-warm-brown">
-                  <div className="w-4 h-4 border-2 border-burnt-orange border-t-transparent rounded-full animate-spin" />
-                  Generating link…
-                </div>
-              ) : shareLink ? (
-                <>
-                  <div className="bg-parchment border border-warm-brown/20 rounded-lg px-3 py-2 font-mono text-[11px] text-warm-brown break-all leading-relaxed max-h-16 overflow-y-auto">
-                    {shareLink}
-                  </div>
-                  <button
-                    onClick={() => copyLink(shareLink, "share")}
-                    className={`leather-btn ${copied === "share" ? "leather-btn-dark" : "leather-btn-primary"} font-sans font-semibold text-sm py-3 px-6 rounded-lg`}
-                  >
-                    {copied === "share" ? "✓ Copied!" : "Copy Partner Link"}
-                  </button>
-                </>
-              ) : null}
-            </div>
-
-            <div className="flex gap-3 w-full max-w-sm">
-              <button onClick={handleRetake} className="leather-btn leather-btn-secondary flex-1 font-sans font-semibold text-sm py-3 px-4 rounded-lg">
-                Retake
-              </button>
-              <button onClick={handleHome} className="leather-btn leather-btn-dark font-sans font-semibold text-sm py-3 px-4 rounded-lg">
-                Home
-              </button>
-            </div>
-
-            <p className="font-sans text-xs text-warm-brown/50 text-center max-w-[260px]">
-              Your partner will shoot their poses. Once done, they&apos;ll send you a final link with the combined strip.
-            </p>
-          </div>
-        )}
-
-        {/* ── Final combined strip ────────────────────────────────────────── */}
-        {duetState === "final" && leftPhotos.length > 0 && rightPhotos.length > 0 && (
-          <div className="w-full flex flex-col items-center gap-5 page-transition">
-            <div className="text-center">
-              <h2 className="font-serif text-2xl font-bold text-burnt-orange">
-                {role === "viewer" ? "Your Duet Strip!" : "The Strip is Ready!"}
+          <div className="flex flex-col gap-5 md:pt-4">
+            <div>
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark-brown leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                {role === "viewer" ? "Your duet\nstrip." : "The strip\nis ready."}
               </h2>
-              <p className="font-sans text-sm text-warm-brown mt-1">
+              <p className="font-sans text-sm text-warm-brown/65 mt-2 leading-relaxed">
                 {role === "viewer"
                   ? "Download your combined photo strip below."
                   : "Share the final link with your partner so they can download too."}
               </p>
             </div>
 
-            <DuetStrip p1Photos={leftPhotos} p2Photos={rightPhotos} />
-
-            {/* Final link (partner shares back to initiator) */}
             {role === "partner" && (
-              <div className="w-full max-w-sm flex flex-col gap-2">
-                <p className="font-sans text-xs text-warm-brown/70 uppercase tracking-wider">Send this to your partner</p>
+              <div className="flex flex-col gap-2">
+                <p className="font-sans text-[10px] text-warm-brown/50 uppercase tracking-wider">Send to your partner</p>
                 {linkLoading ? (
                   <div className="flex items-center gap-2 text-sm text-warm-brown">
                     <div className="w-4 h-4 border-2 border-burnt-orange border-t-transparent rounded-full animate-spin" />
-                    Generating final link…
+                    <span className="font-sans text-xs">Generating link…</span>
                   </div>
                 ) : finalLink ? (
                   <>
-                    <div className="bg-parchment border border-warm-brown/20 rounded-lg px-3 py-2 font-mono text-[11px] text-warm-brown break-all leading-relaxed max-h-16 overflow-y-auto">
+                    <div className="bg-parchment/60 border border-dark-brown/10 rounded-lg px-3 py-2 font-mono text-[11px] text-warm-brown break-all leading-relaxed">
                       {finalLink}
                     </div>
                     <button
@@ -611,58 +324,342 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               Home
             </button>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
+  // P1-done: share link screen
+  if (duetState === "p1-done") {
+    return (
+      <div className="w-full min-h-screen flex flex-col page-transition">
+        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
+          {/* 2×2 thumbnail grid */}
+          <div className="grid grid-cols-2 gap-2 w-full max-w-[240px] mx-auto md:mx-0">
+            {leftPhotos.map((photo, i) => (
+              <div key={i} className="relative rounded-lg overflow-hidden border-2 border-dark-brown/70">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo} alt={`Shot ${i + 1}`} className="w-full block bw-photo" style={{ aspectRatio: "4/3", objectFit: "cover" }} />
+                <span className="absolute top-1 left-1 bg-black/60 text-gold text-[9px] font-mono font-bold w-4 h-4 flex items-center justify-center rounded-sm">
+                  {i + 1}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-5 md:pt-4">
+            <div>
+              <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark-brown leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                Your shots<br />are in.
+              </h2>
+              <p className="font-sans text-sm text-warm-brown/65 mt-2 leading-relaxed">
+                Share this link with your partner. They&apos;ll shoot alongside your ghost — then send you the final strip.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="font-sans text-[10px] text-warm-brown/50 uppercase tracking-wider">Partner link</p>
+              {linkLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-burnt-orange border-t-transparent rounded-full animate-spin" />
+                  <span className="font-sans text-xs text-warm-brown">Generating link…</span>
+                </div>
+              ) : shareLink ? (
+                <>
+                  <div className="bg-parchment/60 border border-dark-brown/10 rounded-lg px-3 py-2 font-mono text-[11px] text-warm-brown break-all leading-relaxed">
+                    {shareLink}
+                  </div>
+                  <button
+                    onClick={() => copyLink(shareLink, "share")}
+                    className={`leather-btn ${copied === "share" ? "leather-btn-dark" : "leather-btn-primary"} font-sans font-semibold text-sm py-3 px-6 rounded-lg`}
+                  >
+                    {copied === "share" ? "✓ Copied!" : "Copy Partner Link"}
+                  </button>
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={handleRetake} className="leather-btn leather-btn-secondary flex-1 font-sans font-semibold text-sm py-3 px-4 rounded-lg">
+                Retake
+              </button>
+              <button onClick={handleHome} className="leather-btn leather-btn-dark font-sans font-semibold text-sm py-3 px-4 rounded-lg">
+                Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Camera view (main layout for both initiator + partner) ───────────────
+  const sidebarSteps = role === "initiator"
+    ? [
+        { stat: "Your shoot",   detail: "4 poses, 3 sec each" },
+        { stat: "Share link",   detail: "partner shoots alongside your ghost" },
+        { stat: "Final strip",  detail: "partner sends you the combined download" },
+      ]
+    : [
+        { stat: "Ghost overlay", detail: "your partner appears across your viewfinder" },
+        { stat: "4 poses",       detail: "3 sec each — position yourself anywhere" },
+        { stat: "Combined strip",detail: "one seamless B&W strip, both of you" },
+      ];
+
+  return (
+    <div className="w-full min-h-screen flex flex-col">
+      <BoothHeader label="Duet Booth" onBack={handleHome} />
+
+      <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
+        <div className="flex flex-col md:grid md:grid-cols-[1fr_232px] md:gap-10 items-start gap-5">
+
+          {/* ── Left: camera column ──────────────────────────────────────── */}
+          <div className="w-full flex flex-col items-center gap-4">
+
+            {/* Shot progress dots */}
+            <div className="flex gap-2 items-center self-start">
+              {Array.from({ length: TOTAL_SHOTS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
+                    i < currentShot
+                      ? "bg-burnt-orange border-burnt-orange"
+                      : i === currentShot && duetState === "countdown"
+                      ? "bg-gold border-gold scale-125"
+                      : "bg-transparent border-warm-brown/30"
+                  }`}
+                />
+              ))}
+              {isLive && (
+                <span className="font-sans text-xs text-warm-brown/50 ml-1.5">
+                  {currentShot + 1} / {TOTAL_SHOTS}
+                </span>
+              )}
+            </div>
+
+            {/* Camera viewport */}
+            <div
+              className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
+              style={{ aspectRatio: "4/3" }}
+            >
+              {/* Camera loading */}
+              {!camReady && !camError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-3">
+                  <div className="w-10 h-10 border-4 border-burnt-orange border-t-transparent rounded-full animate-spin" />
+                  <p className="font-sans text-cream/50 text-xs tracking-wider uppercase">Accessing camera…</p>
+                </div>
+              )}
+
+              {/* Error */}
+              {camError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-4 p-6 text-center">
+                  <CameraOffIcon />
+                  <p className="font-sans text-sm text-cream/60 leading-relaxed max-w-[200px]">{camError}</p>
+                  <button
+                    onClick={() => startCamera(facingMode)}
+                    className="leather-btn leather-btn-primary font-sans font-semibold text-sm py-2.5 px-6 rounded-lg"
+                  >
+                    Allow Camera
+                  </button>
+                </div>
+              )}
+
+              {/* Live video */}
+              <video
+                ref={videoRef}
+                className={`w-full h-full object-cover ${isLive && camReady ? "" : "hidden"}`}
+                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }}
+                playsInline muted autoPlay
+              />
+
+              {/* Ghost overlay (partner shooting) */}
+              {ghostPhoto && isLive && camReady && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ghostPhoto}
+                    alt="Partner ghost"
+                    className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
+                    style={{ opacity: 0.38 }}
+                  />
+                  <div className="absolute top-2 left-0 right-0 flex justify-center z-20 pointer-events-none">
+                    <span className="font-mono text-[9px] text-white/80 bg-black/50 px-2 py-0.5 rounded tracking-wider">
+                      PARTNER GHOST — POSITION YOURSELF ANYWHERE
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* Countdown */}
+              {duetState === "countdown" && (
+                <div className="absolute inset-0 flex items-center justify-center z-30">
+                  <div className="bg-black/30 rounded-full w-20 h-20 flex items-center justify-center animate-count-pulse">
+                    <span className="font-serif text-5xl font-bold text-white drop-shadow-lg">{countdown}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Pose hint */}
+              {duetState === "countdown" && (
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
+                  <span className="bg-black/50 text-white font-sans text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
+                    {DUET_HINTS[currentShot]}
+                  </span>
+                </div>
+              )}
+
+              {/* Flash */}
+              {showFlash && <div className="absolute inset-0 bg-white z-40 animate-flash pointer-events-none" />}
+
+              {/* Film corners */}
+              <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-gold/50 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-gold/50 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-gold/50 pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-gold/50 pointer-events-none" />
+            </div>
+
+            {/* Controls */}
+            <div className="flex gap-3 w-full">
+              {duetState === "camera" && camReady && (
+                <>
+                  <button
+                    onClick={() => { setCurrentShot(0); setCountdown(COUNTDOWN_SECS); setDuetState("countdown"); }}
+                    className="leather-btn leather-btn-primary flex-1 font-sans font-semibold text-base py-3.5 px-6 rounded-lg"
+                  >
+                    {role === "partner" ? "Start My Shoot" : "Start Shoot"}
+                  </button>
+                  {hasMultiCam && (
+                    <button onClick={flipCamera} title="Flip camera"
+                      className="leather-btn leather-btn-secondary font-sans text-sm py-3.5 px-4 rounded-lg"
+                    >
+                      <FlipIcon />
+                    </button>
+                  )}
+                </>
+              )}
+              {duetState === "countdown" && (
+                <p className="flex-1 text-center font-sans text-sm text-warm-brown/60 py-3">
+                  Pose {currentShot + 1} of {TOTAL_SHOTS}
+                  {role === "partner" && " — match your partner"}
+                </p>
+              )}
+              {(!camReady && !camError) && <div className="flex-1 h-12" />}
+            </div>
+
+            {/* Mobile info strip */}
+            <div className="md:hidden w-full border-t border-dark-brown/8 pt-4">
+              {role === "partner" && leftPhotos[0] && (
+                <div className="flex items-center gap-3 mb-4 p-3 bg-parchment/40 rounded-lg border border-dark-brown/8">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={leftPhotos[0]} alt="Partner" className="w-12 h-9 object-cover rounded bw-photo border border-dark-brown/30 shrink-0" />
+                  <div>
+                    <p className="font-sans text-xs font-semibold text-dark-brown">Your partner is ready</p>
+                    <p className="font-sans text-[10px] text-warm-brown/55 leading-tight mt-0.5">Their photo appears as a ghost across your viewfinder</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-around gap-4 py-1">
+                {sidebarSteps.map((item) => (
+                  <div key={item.stat} className="text-center">
+                    <p className="font-serif text-xs font-bold text-dark-brown">{item.stat}</p>
+                    <p className="font-sans text-[9px] text-warm-brown/45 leading-tight mt-0.5">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right: info sidebar (desktop only) ───────────────────────── */}
+          <aside className="hidden md:flex flex-col gap-8 pt-9">
+
+            {/* Partner's photo (for partner role) */}
+            {role === "partner" && leftPhotos[0] && (
+              <div className="flex flex-col gap-2">
+                <p className="font-sans text-[10px] text-warm-brown/45 uppercase tracking-[0.15em]">Your partner</p>
+                <div className="rounded-lg overflow-hidden border-2 border-dark-brown/60 shadow-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={leftPhotos[0]}
+                    alt="Partner's first shot"
+                    className="w-full block bw-photo"
+                    style={{ aspectRatio: "4/3", objectFit: "cover" }}
+                  />
+                  <div className="bg-dark-brown text-gold text-center text-[9px] font-mono py-1 tracking-widest">
+                    GHOST PREVIEW
+                  </div>
+                </div>
+                <p className="font-sans text-[10px] text-warm-brown/40 leading-relaxed">
+                  Their photo appears as a ghost — position yourself anywhere.
+                </p>
+              </div>
+            )}
+
+            {/* Steps */}
+            <div className="flex flex-col gap-5">
+              <p className="font-sans text-[10px] text-burnt-orange uppercase tracking-[0.2em] font-semibold">
+                {role === "partner" ? "Your shoot" : "How Duet works"}
+              </p>
+              {sidebarSteps.map((item) => (
+                <div key={item.stat}>
+                  <p className="font-serif text-lg font-bold text-dark-brown leading-tight" style={{ letterSpacing: "-0.015em" }}>
+                    {item.stat}
+                  </p>
+                  <p className="font-sans text-xs text-warm-brown/50 mt-0.5 leading-relaxed">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-dark-brown/8 pt-5">
+              <p className="font-sans text-xs text-warm-brown/30 leading-relaxed">
+                Photos never leave your device.
+              </p>
+            </div>
+          </aside>
+
+        </div>
       </div>
     </div>
   );
-
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Shared sub-components ────────────────────────────────────────────────────
 
-function ErrorBanner({ message }: { message: string }) {
+function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) {
   return (
-    <p className="font-sans text-sm text-deep-orange bg-deep-orange/10 border border-deep-orange/20 rounded-lg px-4 py-2.5 text-center max-w-xs">
-      {message}
-    </p>
+    <header className="w-full sticky top-0 z-20 bg-cream/92 backdrop-blur-md border-b border-dark-brown/8">
+      <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
+        <button
+          onClick={onBack}
+          className="font-sans text-sm text-warm-brown/50 hover:text-warm-brown transition-colors flex items-center gap-1.5 shrink-0"
+        >
+          ← Back
+        </button>
+        <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+          <span className="font-serif text-lg font-bold text-burnt-orange tracking-tight">CitoFoto</span>
+          <span className="font-sans text-[10px] text-warm-brown/40 uppercase tracking-[0.15em] hidden sm:block">
+            / {label}
+          </span>
+        </div>
+        <div className="w-14 shrink-0" />
+      </div>
+    </header>
   );
 }
 
-function DuetIllustration() {
+function CameraOffIcon() {
   return (
-    <div className="relative w-52 h-44 flex items-center justify-center">
-      {/* Two film strips side by side */}
-      <div className="w-16 bg-dark-brown rounded-sm shadow-xl flex flex-col gap-1 p-1.5 absolute left-6 top-2">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="w-full bg-warm-brown/30 rounded-sm" style={{ height: "28px" }} />
-        ))}
-      </div>
-      <div className="w-16 bg-dark-brown rounded-sm shadow-xl flex flex-col gap-1 p-1.5 absolute right-6 top-2">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="w-full bg-warm-brown/30 rounded-sm" style={{ height: "28px" }} />
-        ))}
-      </div>
-      {/* Link icon in center */}
-      <div className="relative z-10 w-14 h-14 bg-burnt-orange rounded-full flex items-center justify-center shadow-xl">
-        <LinkIcon />
-      </div>
-    </div>
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-cream/20">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
   );
 }
 
 function FlipIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
     </svg>
   );
 }
