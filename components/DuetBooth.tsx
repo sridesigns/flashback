@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { captureFromVideo, compressForUrl, encodeForUrl, decodeFromUrl } from "@/lib/photoUtils";
+import { uploadBlob, downloadBlob } from "@/lib/blobStore";
 import DuetStrip from "./DuetStrip";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,13 +59,16 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   // ── On mount: detect URL hash ─────────────────────────────────────────────
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.startsWith("#duet=")) {
-      const payload = decodeFromUrl(hash.slice(6));
+    if (!hash.startsWith("#duet=")) { setDuetState("p1-idle"); return; }
+
+    const value = hash.slice(6);
+
+    const apply = (payload: { phase: string; p1: string[]; p2?: string[] } | null) => {
       if (payload?.phase === "p1") {
-        setLeftPhotos(payload.p1);       // initiator's compressed photos
+        setLeftPhotos(payload.p1);
         setRole("partner");
         setDuetState("p2-intro");
-      } else if (payload?.phase === "final") {
+      } else if (payload?.phase === "final" && payload.p2) {
         setLeftPhotos(payload.p1);
         setRightPhotos(payload.p2);
         setRole("viewer");
@@ -72,8 +76,16 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
       } else {
         setDuetState("p1-idle");
       }
+    };
+
+    if (value.startsWith("jb_")) {
+      // Short link — fetch from blob store
+      downloadBlob(value.slice(3))
+        .then(data => apply(data as { phase: string; p1: string[]; p2?: string[] }))
+        .catch(() => setDuetState("p1-idle"));
     } else {
-      setDuetState("p1-idle");
+      // Legacy: full base64-encoded payload in URL
+      apply(decodeFromUrl(value));
     }
   }, []);
 
@@ -186,9 +198,16 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   useEffect(() => {
     if (duetState !== "p1-done" || leftPhotos.length !== TOTAL_SHOTS || shareLink) return;
     setLinkLoading(true);
-    Promise.all(leftPhotos.map(compressForUrl)).then(compressed => {
-      const encoded = encodeForUrl({ phase: "p1", p1: compressed });
-      setShareLink(`${window.location.origin}/#duet=${encoded}`);
+    Promise.all(leftPhotos.map(compressForUrl)).then(async (compressed) => {
+      const payload: { phase: "p1"; p1: string[] } = { phase: "p1", p1: compressed };
+      try {
+        const id = await uploadBlob(payload);
+        setShareLink(`${window.location.origin}/#duet=jb_${id}`);
+      } catch {
+        // Fallback: embed in URL directly
+        const encoded = encodeForUrl(payload);
+        setShareLink(`${window.location.origin}/#duet=${encoded}`);
+      }
       setLinkLoading(false);
     });
   }, [duetState, leftPhotos, shareLink]);
@@ -204,10 +223,16 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   useEffect(() => {
     if (duetState !== "final" || role !== "partner" || rightPhotos.length !== TOTAL_SHOTS || finalLink) return;
     setLinkLoading(true);
-    Promise.all(rightPhotos.map(compressForUrl)).then(compressedP2 => {
-      // leftPhotos are already compressed (came from URL)
-      const encoded = encodeForUrl({ phase: "final", p1: leftPhotos, p2: compressedP2 });
-      setFinalLink(`${window.location.origin}/#duet=${encoded}`);
+    Promise.all(rightPhotos.map(compressForUrl)).then(async (compressedP2) => {
+      // leftPhotos already compressed (arrived via blob store or URL)
+      const payload: { phase: "final"; p1: string[]; p2: string[] } = { phase: "final", p1: leftPhotos, p2: compressedP2 };
+      try {
+        const id = await uploadBlob(payload);
+        setFinalLink(`${window.location.origin}/#duet=jb_${id}`);
+      } catch {
+        const encoded = encodeForUrl(payload);
+        setFinalLink(`${window.location.origin}/#duet=${encoded}`);
+      }
       setLinkLoading(false);
     });
   }, [duetState, role, rightPhotos, leftPhotos, finalLink]);
