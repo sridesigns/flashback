@@ -1,9 +1,13 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 
 interface PhotoStripProps {
   photos: string[];
+}
+
+export interface PhotoStripHandle {
+  download: () => void;
 }
 
 const TOTAL_PHOTOS = 4;
@@ -83,7 +87,7 @@ function formatDate(d: Date): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function PhotoStrip({ photos }: PhotoStripProps) {
+const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoStrip({ photos }, ref) {
   const stripRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = useCallback(async () => {
@@ -278,9 +282,12 @@ export default function PhotoStrip({ photos }: PhotoStripProps) {
     link.click();
   }, [photos]);
 
+  // Expose download() to parent via ref
+  useImperativeHandle(ref, () => ({ download: handleDownload }), [handleDownload]);
+
   // ── JSX ────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
+    <div className="flex flex-col items-center w-full">
       {/* Strip display */}
       <div
         ref={stripRef}
@@ -349,22 +356,8 @@ export default function PhotoStrip({ photos }: PhotoStripProps) {
         </div>
       </div>
 
-      {/* Download button */}
-      <button
-        onClick={handleDownload}
-        className="leather-btn leather-btn-secondary w-full max-w-[280px] font-sans font-semibold text-sm py-3 px-6 rounded-lg flex items-center justify-center gap-2"
-      >
-        <DownloadIcon />
-        Save Photo Strip
-      </button>
     </div>
   );
-}
+});
 
-function DownloadIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-    </svg>
-  );
-}
+export default PhotoStrip;

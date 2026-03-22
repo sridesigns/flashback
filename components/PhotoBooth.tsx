@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import PhotoStrip from "./PhotoStrip";
+import PhotoStrip, { PhotoStripHandle } from "./PhotoStrip";
 
 type BoothState = "idle" | "permission" | "preview" | "countdown" | "done";
 
@@ -26,9 +26,10 @@ interface PhotoBoothProps {
 }
 
 export default function PhotoBooth({ onHome }: PhotoBoothProps) {
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const videoRef   = useRef<HTMLVideoElement>(null);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const streamRef  = useRef<MediaStream | null>(null);
+  const stripRef   = useRef<PhotoStripHandle>(null);
 
   const [state,      setState]      = useState<BoothState>("idle");
   const [photos,     setPhotos]     = useState<string[]>([]);
@@ -188,33 +189,47 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
           {/* Strip */}
           <div className="flex justify-center">
-            <PhotoStrip photos={photos} />
+            <PhotoStrip ref={stripRef} photos={photos} />
           </div>
           {/* Actions */}
-          <div className="flex flex-col gap-5 md:pt-4">
+          <div className="flex flex-col gap-6 md:pt-4">
             <div>
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark-brown leading-tight" style={{ letterSpacing: "-0.02em" }}>
                 Your strip<br />is ready.
               </h2>
               <p className="font-sans text-sm text-warm-brown/65 mt-2 leading-relaxed">
-                Four poses. One memory. Download it and keep it forever.
+                Four poses. One memory.
               </p>
             </div>
-            <div className="flex flex-col gap-3">
+
+            {/* Button group */}
+            <div className="flex flex-col gap-2.5">
+              {/* Primary: Save */}
               <button
-                onClick={handleRetake}
-                className="leather-btn leather-btn-secondary font-sans font-semibold text-sm py-3 px-6 rounded-lg text-left"
+                onClick={() => stripRef.current?.download()}
+                className="leather-btn leather-btn-primary font-sans font-semibold text-sm py-3.5 px-6 rounded-xl flex items-center gap-2.5 w-full justify-center"
               >
-                Shoot Again
+                <DownloadIcon />
+                Save Photo Strip
               </button>
-              <button
-                onClick={handleHome}
-                className="leather-btn leather-btn-dark font-sans font-semibold text-sm py-3 px-6 rounded-lg text-left"
-              >
-                Home
-              </button>
+              {/* Secondary row */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleRetake}
+                  className="leather-btn leather-btn-secondary font-sans font-semibold text-sm py-3 px-5 rounded-xl flex-1"
+                >
+                  Shoot Again
+                </button>
+                <button
+                  onClick={handleHome}
+                  className="leather-btn leather-btn-dark font-sans font-semibold text-sm py-3 px-5 rounded-xl flex-1"
+                >
+                  Home
+                </button>
+              </div>
             </div>
-            <p className="font-sans text-xs text-warm-brown/35 leading-relaxed">
+
+            <p className="font-sans text-xs text-warm-brown/30 leading-relaxed">
               Your photos never leave your device.
             </p>
           </div>
@@ -415,6 +430,14 @@ function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) 
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
+
+function DownloadIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
+  );
+}
 
 function CameraOffIcon() {
   return (
