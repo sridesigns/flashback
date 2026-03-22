@@ -153,6 +153,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               setCurrentShot(nextShot);
               setTimeout(() => { setCountdown(COUNTDOWN_SECONDS); setState("countdown"); }, 1000);
             } else {
+              stopCamera();
               setState("done");
             }
             return next;
