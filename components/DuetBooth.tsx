@@ -476,16 +476,26 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               {/* Ghost overlay (partner shooting) */}
               {ghostPhoto && isLive && camReady && (
                 <>
+                  {/* Partner's photo as a ghost — full frame, medium opacity */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={ghostPhoto}
                     alt="Partner ghost"
                     className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
-                    style={{ opacity: 0.38 }}
+                    style={{ opacity: 0.52 }}
                   />
-                  <div className="absolute top-2 left-0 right-0 flex justify-center z-20 pointer-events-none">
-                    <span className="font-mono text-[9px] text-white/80 bg-black/50 px-2 py-0.5 rounded tracking-wider">
-                      PARTNER GHOST — POSITION YOURSELF ANYWHERE
+                  {/* Soft left-half highlight to show P1's territory */}
+                  <div
+                    className="absolute inset-0 z-10 pointer-events-none"
+                    style={{ background: "linear-gradient(to right, rgba(201,168,76,0.08) 0%, transparent 55%)" }}
+                  />
+                  {/* Labels */}
+                  <div className="absolute bottom-12 left-0 right-0 flex justify-between px-3 z-20 pointer-events-none">
+                    <span className="font-mono text-[9px] text-white/70 bg-black/60 px-2 py-0.5 rounded tracking-wider">
+                      ← PARTNER
+                    </span>
+                    <span className="font-mono text-[9px] text-gold/90 bg-black/60 px-2 py-0.5 rounded tracking-wider">
+                      YOU →
                     </span>
                   </div>
                 </>

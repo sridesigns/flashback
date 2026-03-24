@@ -1,35 +1,25 @@
 /**
- * Lightweight JSON blob storage via jsonblob.com.
- * Free, no API key, CORS-friendly — used for Duet Mode photo sharing.
- * Blobs are deleted after 90 days of inactivity or first read (retention is best-effort).
+ * Blob storage for Duet Mode photo sharing.
+ * Routes through /api/blob (our own Next.js route) which proxies to jsonblob.com
+ * server-side — avoiding CORS restrictions that block the Location header in browser.
+ *
+ * Share URLs: citofoto.vercel.app/#duet=jb_<id>  (~50 chars total)
  */
 
-const API = "https://jsonblob.com/api/jsonBlob";
-
-/**
- * Upload a JSON payload and return the blob ID (a numeric string ~19 chars).
- * The resulting share URL becomes: `${origin}/#duet=jb_${id}` — very short.
- */
 export async function uploadBlob(data: unknown): Promise<string> {
-  const res = await fetch(API, {
+  const res = await fetch("/api/blob", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error(`Blob upload failed: ${res.status}`);
-  const location = res.headers.get("Location") ?? "";
-  const id = location.split("/").pop();
-  if (!id) throw new Error("No blob ID in response");
-  return id;
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  const json = await res.json() as { id?: string; error?: string };
+  if (!json.id) throw new Error(json.error ?? "No ID returned");
+  return json.id;
 }
 
-/**
- * Fetch a previously uploaded blob by its ID.
- */
 export async function downloadBlob(id: string): Promise<unknown> {
-  const res = await fetch(`${API}/${id}`, {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(`Blob download failed: ${res.status}`);
+  const res = await fetch(`/api/blob?id=${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   return res.json();
 }

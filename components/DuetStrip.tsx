@@ -233,10 +233,10 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.rect(frameX, frameY, photoW, photoH);
       ctx.clip();
 
-      // P1 — full frame, fades to transparent toward the right
-      if (p1Imgs[i]) drawWithGradientMask(ctx, p1Imgs[i], frameX, frameY, photoW, photoH, "right", 0.35, 0.65);
-      // P2 — full frame, fades to transparent toward the left (blends over P1)
-      if (p2Imgs[i]) drawWithGradientMask(ctx, p2Imgs[i], frameX, frameY, photoW, photoH, "left",  0.35, 0.65);
+      // P1 — fully visible on left, soft fade 45%→55%
+      if (p1Imgs[i]) drawWithGradientMask(ctx, p1Imgs[i], frameX, frameY, photoW, photoH, "right", 0.45, 0.55);
+      // P2 — fully visible on right, soft fade 45%→55%
+      if (p2Imgs[i]) drawWithGradientMask(ctx, p2Imgs[i], frameX, frameY, photoW, photoH, "left",  0.45, 0.55);
 
       ctx.restore();
 
@@ -332,8 +332,8 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
                   alt={`Shot ${i + 1}`}
                   className="absolute inset-0 w-full h-full object-cover bw-photo"
                   style={{
-                    maskImage: "linear-gradient(to right, black 35%, transparent 65%)",
-                    WebkitMaskImage: "linear-gradient(to right, black 35%, transparent 65%)",
+                    maskImage: "linear-gradient(to right, black 45%, transparent 55%)",
+                    WebkitMaskImage: "linear-gradient(to right, black 45%, transparent 55%)",
                   }}
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -342,8 +342,8 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
                   alt={`Shot ${i + 1}`}
                   className="absolute inset-0 w-full h-full object-cover bw-photo"
                   style={{
-                    maskImage: "linear-gradient(to left, black 35%, transparent 65%)",
-                    WebkitMaskImage: "linear-gradient(to left, black 35%, transparent 65%)",
+                    maskImage: "linear-gradient(to left, black 45%, transparent 55%)",
+                    WebkitMaskImage: "linear-gradient(to left, black 45%, transparent 55%)",
                   }}
                 />
                 {/* Frame number */}
