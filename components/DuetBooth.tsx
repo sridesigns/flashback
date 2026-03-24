@@ -473,30 +473,45 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                 playsInline muted autoPlay
               />
 
-              {/* Ghost overlay (partner shooting) */}
+              {/* Ghost overlay — partner's photo pinned to LEFT half only */}
               {ghostPhoto && isLive && camReady && (
                 <>
-                  {/* Partner's photo as a ghost — full frame, medium opacity */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ghostPhoto}
-                    alt="Partner ghost"
-                    className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
-                    style={{ opacity: 0.52 }}
-                  />
-                  {/* Soft left-half highlight to show P1's territory */}
-                  <div
-                    className="absolute inset-0 z-10 pointer-events-none"
-                    style={{ background: "linear-gradient(to right, rgba(201,168,76,0.08) 0%, transparent 55%)" }}
-                  />
-                  {/* Labels */}
-                  <div className="absolute bottom-12 left-0 right-0 flex justify-between px-3 z-20 pointer-events-none">
-                    <span className="font-mono text-[9px] text-white/70 bg-black/60 px-2 py-0.5 rounded tracking-wider">
-                      ← PARTNER
-                    </span>
-                    <span className="font-mono text-[9px] text-gold/90 bg-black/60 px-2 py-0.5 rounded tracking-wider">
-                      YOU →
-                    </span>
+                  {/* Left-half ghost: overflow-hidden clips to exactly 50% width */}
+                  <div className="absolute top-0 left-0 h-full w-1/2 overflow-hidden z-10 pointer-events-none">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ghostPhoto}
+                      alt="Partner ghost"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{
+                        opacity: 0.65,
+                        filter: "grayscale(100%) contrast(1.1)",
+                        /* un-mirror: ghost was captured mirrored, display straight */
+                        transform: "scaleX(-1)",
+                      }}
+                    />
+                    {/* Subtle gold fade on the right edge of the ghost */}
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: "linear-gradient(to right, transparent 60%, rgba(0,0,0,0.45) 100%)" }}
+                    />
+                  </div>
+
+                  {/* Center divider line */}
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/25 z-20 pointer-events-none" />
+
+                  {/* PARTNER / YOU labels */}
+                  <div className="absolute bottom-12 left-0 right-0 flex z-20 pointer-events-none">
+                    <div className="w-1/2 flex justify-start pl-2">
+                      <span className="font-mono text-[9px] text-white/70 bg-black/55 px-2 py-0.5 rounded tracking-wider">
+                        ← PARTNER
+                      </span>
+                    </div>
+                    <div className="w-1/2 flex justify-end pr-2">
+                      <span className="font-mono text-[9px] text-gold bg-black/55 px-2 py-0.5 rounded tracking-wider">
+                        STAND HERE →
+                      </span>
+                    </div>
                   </div>
                 </>
               )}
