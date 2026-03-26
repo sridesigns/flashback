@@ -276,27 +276,6 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           {/* ── Left: camera column ──────────────────────────────────────── */}
           <div className="w-full flex flex-col items-center gap-4">
 
-            {/* Shot progress dots */}
-            <div className="flex gap-2 items-center self-start">
-              {Array.from({ length: TOTAL_PHOTOS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
-                    i < currentShot
-                      ? "bg-burnt-orange border-burnt-orange"
-                      : i === currentShot && state === "countdown"
-                      ? "bg-gold border-gold scale-125"
-                      : "bg-transparent border-warm-brown/30"
-                  }`}
-                />
-              ))}
-              {(state === "preview" || state === "countdown") && (
-                <span className="font-sans text-xs text-warm-brown/50 ml-1.5">
-                  {currentShot + 1} / {TOTAL_PHOTOS}
-                </span>
-              )}
-            </div>
-
             {/* Camera viewport — always rendered, overlays handle states */}
             <div
               className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
@@ -360,32 +339,67 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-gold/50 pointer-events-none" />
             </div>
 
-            {/* Controls */}
-            <div className="flex gap-3 w-full">
+            {/* Thumbnail slots — fill as photos are captured */}
+            <div className="flex gap-3 justify-center w-full">
+              {Array.from({ length: TOTAL_PHOTOS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`relative overflow-hidden rounded-lg flex items-center justify-center transition-all duration-300 ${
+                    photos[i]
+                      ? "border-2 border-dark-brown/70 shadow-md"
+                      : "border-2 border-dashed border-dark-brown/25"
+                  }`}
+                  style={{ width: "22%", aspectRatio: "4/3" }}
+                >
+                  {photos[i] ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photos[i]}
+                        alt={`Shot ${i + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover bw-photo"
+                      />
+                      <span className="absolute top-0.5 left-0.5 bg-black/60 text-gold text-[7px] font-mono font-bold w-3 h-3 flex items-center justify-center rounded-sm z-10">
+                        {i + 1}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-sans text-sm text-dark-brown/25 font-medium">{i + 1}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Shutter button + controls */}
+            <div className="flex flex-col items-center gap-3">
               {state === "preview" && (
-                <>
-                  <button
-                    onClick={handleStart}
-                    className="leather-btn leather-btn-primary flex-1 font-sans font-semibold text-base py-3.5 px-6 rounded-lg"
-                  >
-                    Start Shoot
-                  </button>
+                <div className="flex items-center gap-4">
                   {hasMultipleCameras && (
                     <button onClick={flipCamera} title="Flip camera"
-                      className="leather-btn leather-btn-secondary font-sans text-sm py-3.5 px-4 rounded-lg"
+                      className="leather-btn leather-btn-secondary font-sans text-sm p-3 rounded-full"
                     >
                       <FlipIcon />
                     </button>
                   )}
-                </>
+                  <button
+                    onClick={handleStart}
+                    className="w-[72px] h-[72px] rounded-full border-[4px] border-dark-brown/70 flex items-center justify-center bg-cream hover:scale-105 active:scale-95 transition-transform shadow-lg"
+                    title="Start Shoot"
+                  >
+                    <div className="w-[54px] h-[54px] rounded-full bg-dark-brown" />
+                  </button>
+                  {hasMultipleCameras ? (
+                    <div className="w-[44px]" /> /* spacer to center shutter */
+                  ) : null}
+                </div>
               )}
               {state === "countdown" && (
-                <p className="flex-1 text-center font-sans text-sm text-warm-brown/60 py-3">
+                <p className="text-center font-sans text-sm text-warm-brown/60 py-3">
                   Pose {currentShot + 1} of {TOTAL_PHOTOS} — get ready…
                 </p>
               )}
               {(state === "permission" || state === "idle") && (
-                <div className="flex-1 h-12" /> /* placeholder to avoid layout jump */
+                <div className="h-12" /> /* placeholder to avoid layout jump */
               )}
             </div>
 

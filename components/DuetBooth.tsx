@@ -431,27 +431,6 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
           {/* ── Left: camera column ──────────────────────────────────────── */}
           <div className="w-full flex flex-col items-center gap-4">
 
-            {/* Shot progress dots */}
-            <div className="flex gap-2 items-center self-start">
-              {Array.from({ length: TOTAL_SHOTS }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
-                    i < currentShot
-                      ? "bg-burnt-orange border-burnt-orange"
-                      : i === currentShot && duetState === "countdown"
-                      ? "bg-gold border-gold scale-125"
-                      : "bg-transparent border-warm-brown/30"
-                  }`}
-                />
-              ))}
-              {isLive && (
-                <span className="font-sans text-xs text-warm-brown/50 ml-1.5">
-                  {currentShot + 1} / {TOTAL_SHOTS}
-                </span>
-              )}
-            </div>
-
             {/* Camera viewport */}
             <div
               className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
@@ -487,45 +466,24 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                 playsInline muted autoPlay
               />
 
-              {/* Ghost overlay — partner's photo pinned to LEFT half only */}
+              {/* Ghost overlay — full frame, partner positions themselves next to it */}
               {ghostPhoto && isLive && camReady && (
-                <>
-                  {/* Left-half ghost: overflow-hidden clips to exactly 50% width */}
-                  <div className="absolute top-0 left-0 h-full w-1/2 overflow-hidden z-10 pointer-events-none">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={ghostPhoto}
-                      alt="Partner ghost"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{
-                        opacity: 0.65,
-                        filter: "grayscale(100%) contrast(1.1)",
-                      }}
-                    />
-                    {/* Subtle gold fade on the right edge of the ghost */}
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: "linear-gradient(to right, transparent 60%, rgba(0,0,0,0.45) 100%)" }}
-                    />
-                  </div>
-
-                  {/* Center divider line */}
-                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/25 z-20 pointer-events-none" />
-
-                  {/* PARTNER / YOU labels */}
-                  <div className="absolute bottom-12 left-0 right-0 flex z-20 pointer-events-none">
-                    <div className="w-1/2 flex justify-start pl-2">
-                      <span className="font-mono text-[9px] text-white/70 bg-black/55 px-2 py-0.5 rounded tracking-wider">
-                        ← PARTNER
-                      </span>
-                    </div>
-                    <div className="w-1/2 flex justify-end pr-2">
-                      <span className="font-mono text-[9px] text-gold bg-black/55 px-2 py-0.5 rounded tracking-wider">
-                        STAND HERE →
-                      </span>
-                    </div>
-                  </div>
-                </>
+                <div className="absolute inset-0 z-10 pointer-events-none">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ghostPhoto}
+                    alt="Partner ghost"
+                    className="w-full h-full object-cover"
+                    style={{
+                      opacity: 0.35,
+                      filter: "grayscale(100%) contrast(1.1)",
+                    }}
+                  />
+                  {/* Ghost label */}
+                  <span className="absolute top-2 left-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider">
+                    👻 PARTNER
+                  </span>
+                </div>
               )}
 
               {/* Countdown */}
@@ -556,32 +514,70 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-gold/50 pointer-events-none" />
             </div>
 
-            {/* Controls */}
-            <div className="flex gap-3 w-full">
-              {duetState === "camera" && camReady && (
-                <>
-                  <button
-                    onClick={() => { setCurrentShot(0); setCountdown(COUNTDOWN_SECS); setDuetState("countdown"); }}
-                    className="leather-btn leather-btn-primary flex-1 font-sans font-semibold text-base py-3.5 px-6 rounded-lg"
+            {/* Thumbnail slots — fill as photos are captured */}
+            <div className="flex gap-3 justify-center w-full">
+              {Array.from({ length: TOTAL_SHOTS }).map((_, i) => {
+                const photo = role === "initiator" ? leftPhotos[i] : rightPhotos[i];
+                return (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden rounded-lg flex items-center justify-center transition-all duration-300 ${
+                      photo
+                        ? "border-2 border-dark-brown/70 shadow-md"
+                        : "border-2 border-dashed border-dark-brown/25"
+                    }`}
+                    style={{ width: "22%", aspectRatio: "4/3" }}
                   >
-                    {role === "partner" ? "Start My Shoot" : "Start Shoot"}
-                  </button>
+                    {photo ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo}
+                          alt={`Shot ${i + 1}`}
+                          className="absolute inset-0 w-full h-full object-cover bw-photo"
+                        />
+                        <span className="absolute top-0.5 left-0.5 bg-black/60 text-gold text-[7px] font-mono font-bold w-3 h-3 flex items-center justify-center rounded-sm z-10">
+                          {i + 1}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-sans text-sm text-dark-brown/25 font-medium">{i + 1}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Shutter button + controls */}
+            <div className="flex flex-col items-center gap-3">
+              {duetState === "camera" && camReady && (
+                <div className="flex items-center gap-4">
                   {hasMultiCam && (
                     <button onClick={flipCamera} title="Flip camera"
-                      className="leather-btn leather-btn-secondary font-sans text-sm py-3.5 px-4 rounded-lg"
+                      className="leather-btn leather-btn-secondary font-sans text-sm p-3 rounded-full"
                     >
                       <FlipIcon />
                     </button>
                   )}
-                </>
+                  <button
+                    onClick={() => { setCurrentShot(0); setCountdown(COUNTDOWN_SECS); setDuetState("countdown"); }}
+                    className="w-[72px] h-[72px] rounded-full border-[4px] border-dark-brown/70 flex items-center justify-center bg-cream hover:scale-105 active:scale-95 transition-transform shadow-lg"
+                    title={role === "partner" ? "Start My Shoot" : "Start Shoot"}
+                  >
+                    <div className="w-[54px] h-[54px] rounded-full bg-dark-brown" />
+                  </button>
+                  {hasMultiCam ? (
+                    <div className="w-[44px]" /> /* spacer to center shutter */
+                  ) : null}
+                </div>
               )}
               {duetState === "countdown" && (
-                <p className="flex-1 text-center font-sans text-sm text-warm-brown/60 py-3">
+                <p className="text-center font-sans text-sm text-warm-brown/60 py-3">
                   Pose {currentShot + 1} of {TOTAL_SHOTS}
-                  {role === "partner" && " — match your partner"}
+                  {role === "partner" && " — position yourself next to your partner"}
                 </p>
               )}
-              {(!camReady && !camError) && <div className="flex-1 h-12" />}
+              {(!camReady && !camError) && <div className="h-12" />}
             </div>
 
             {/* Mobile info strip */}
@@ -592,7 +588,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                   <img src={leftPhotos[0]} alt="Partner" className="w-12 h-9 object-cover rounded bw-photo border border-dark-brown/30 shrink-0" />
                   <div>
                     <p className="font-sans text-xs font-semibold text-dark-brown">Your partner is ready</p>
-                    <p className="font-sans text-[10px] text-warm-brown/55 leading-tight mt-0.5">Their photo appears as a ghost across your viewfinder</p>
+                    <p className="font-sans text-[10px] text-warm-brown/55 leading-tight mt-0.5">Position yourself next to their ghost in the viewfinder</p>
                   </div>
                 </div>
               )}
