@@ -332,7 +332,7 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
       <div
         className="relative shadow-2xl overflow-hidden"
         style={{
-          width: "min(280px, 85vw)",
+          width: "min(240px, 75vw)",
           background: "linear-gradient(180deg, #1C0F08 0%, #140A05 50%, #1C0F08 100%)",
           borderRadius: "2px",
         }}

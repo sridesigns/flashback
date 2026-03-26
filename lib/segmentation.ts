@@ -125,11 +125,11 @@ export function extractPerson(colorPhotoUrl: string): Promise<string> {
         const personCtx = personC.getContext("2d")!;
         personCtx.drawImage(img, 0, 0);           // draw original color image
 
-        // Draw a blurred version of the mask to erase edges softly
+        // Draw a slightly blurred mask for soft but clean edges
         const blurredMaskC = document.createElement("canvas");
         blurredMaskC.width = W; blurredMaskC.height = H;
         const blurCtx = blurredMaskC.getContext("2d")!;
-        blurCtx.filter = `blur(4px)`;
+        blurCtx.filter = `blur(2px)`;
         blurCtx.drawImage(maskC, 0, 0, W, H);     // scale mask to source size
         blurCtx.filter = "none";
 
@@ -165,9 +165,9 @@ export async function composeDuetFrame(
     loadImg(p2CutoutUrl),
   ]);
 
-  // Fixed output canvas at 3:4 portrait for consistent quality
-  const W = 480;
-  const H = 640;
+  // Higher-res portrait canvas (3:4) for crisp output
+  const W = 600;
+  const H = 800;
 
   const outC = document.createElement("canvas");
   outC.width = W; outC.height = H;
@@ -177,20 +177,19 @@ export async function composeDuetFrame(
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Draw P1 — slightly zoomed in, positioned left-of-center
-  //    People should overlap in the middle like they're sitting together
-  const zoom = 1.12; // slight zoom so people fill the frame
-  const p1H = H * zoom;
+  // 2. Draw P1 — positioned left-of-center, natural scale
+  //    People overlap in the middle like sitting shoulder-to-shoulder
+  const p1H = H;
   const p1W = Math.round(p1Img.naturalWidth * (p1H / p1Img.naturalHeight));
-  const p1X = Math.round(W * 0.38 - p1W * 0.5); // center of P1 at 38%
-  const p1Y = Math.round(H - p1H);               // align to bottom
+  const p1X = Math.round(W * 0.40 - p1W * 0.5); // center of P1 at 40%
+  const p1Y = 0;
   ctx.drawImage(p1Img, p1X, p1Y, p1W, p1H);
 
-  // 3. Draw P2 — same zoom, positioned right-of-center, overlapping P1
-  const p2H = H * zoom;
+  // 3. Draw P2 — positioned right-of-center, overlapping P1
+  const p2H = H;
   const p2W = Math.round(p2Img.naturalWidth * (p2H / p2Img.naturalHeight));
-  const p2X = Math.round(W * 0.62 - p2W * 0.5); // center of P2 at 62%
-  const p2Y = Math.round(H - p2H);
+  const p2X = Math.round(W * 0.60 - p2W * 0.5); // center of P2 at 60%
+  const p2Y = 0;
   ctx.drawImage(p2Img, p2X, p2Y, p2W, p2H);
 
   // 4. Apply B&W film look to the unified composite

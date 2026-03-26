@@ -278,7 +278,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
             {/* Camera viewport — always rendered, overlays handle states */}
             <div
-              className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
+              className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
               style={{ aspectRatio: "3/4" }}
             >
               {/* Permission loading */}

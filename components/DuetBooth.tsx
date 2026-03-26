@@ -433,7 +433,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
             {/* Camera viewport */}
             <div
-              className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
+              className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
               style={{ aspectRatio: "3/4" }}
             >
               {/* Camera loading */}
