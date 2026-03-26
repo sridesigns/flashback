@@ -4,24 +4,52 @@
 
 // ─── Film processing ──────────────────────────────────────────────────────────
 
-/** B&W + contrast boost + warm sepia tint + radial vignette */
+/** Rich B&W film look — S-curve contrast, warm sepia, grain, heavy vignette */
 function applyFilmLook(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const imageData = ctx.getImageData(0, 0, w, h);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
+    // BT.709 luminance
     let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    lum = Math.min(255, Math.max(0, (lum - 128) * 1.2 + 128));
-    data[i]     = Math.min(255, lum * 1.02); // warm tint
-    data[i + 1] = Math.min(255, lum * 0.98);
-    data[i + 2] = Math.min(255, lum * 0.92);
+    // S-curve for rich film contrast (smoothstep)
+    let t = lum / 255;
+    t = t * t * (3 - 2 * t);
+    lum = t * 255;
+    // Lift blacks slightly (film never goes pure black)
+    lum = 12 + lum * (243 / 255);
+    // Warm sepia tint — stronger warmth
+    data[i]     = Math.min(255, lum * 1.06);  // red: warm
+    data[i + 1] = Math.min(255, lum * 0.97);  // green: neutral
+    data[i + 2] = Math.min(255, lum * 0.86);  // blue: cool = warm overall
   }
   ctx.putImageData(imageData, 0, 0);
 
-  const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.85);
-  vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.45)");
-  ctx.fillStyle = vignette;
+  // Film grain overlay
+  const grainC = document.createElement("canvas");
+  grainC.width = w; grainC.height = h;
+  const gctx = grainC.getContext("2d")!;
+  const gid = gctx.createImageData(w, h);
+  const gd = gid.data;
+  for (let i = 0; i < gd.length; i += 4) {
+    const n = (Math.random() - 0.5) * 50;
+    gd[i] = gd[i + 1] = gd[i + 2] = 128 + n;
+    gd[i + 3] = 255;
+  }
+  gctx.putImageData(gid, 0, 0);
+  ctx.globalCompositeOperation = "overlay";
+  ctx.globalAlpha = 0.12;
+  ctx.drawImage(grainC, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+
+  // Heavy vignette — deep black corners like a real film print
+  const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.18, w / 2, h / 2, h * 0.75);
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(0.5, "rgba(0,0,0,0.15)");
+  vig.addColorStop(0.8, "rgba(0,0,0,0.45)");
+  vig.addColorStop(1, "rgba(0,0,0,0.7)");
+  ctx.fillStyle = vig;
   ctx.fillRect(0, 0, w, h);
 }
 

@@ -44,21 +44,50 @@ function loadImg(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Apply B&W film look in-place on a canvas context. */
+/** Rich B&W film look — S-curve contrast, warm sepia, grain, heavy vignette */
 function applyFilmLook(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const id = ctx.getImageData(0, 0, w, h);
   const d = id.data;
   for (let i = 0; i < d.length; i += 4) {
+    // BT.709 luminance
     let lum = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-    lum = Math.min(255, Math.max(0, (lum - 128) * 1.2 + 128));
-    d[i]     = Math.min(255, lum * 1.02);
-    d[i + 1] = Math.min(255, lum * 0.98);
-    d[i + 2] = Math.min(255, lum * 0.92);
+    // S-curve for rich film contrast (smoothstep)
+    let t = lum / 255;
+    t = t * t * (3 - 2 * t);
+    lum = t * 255;
+    // Lift blacks slightly (film never goes pure black)
+    lum = 12 + lum * (243 / 255);
+    // Warm sepia tint
+    d[i]     = Math.min(255, lum * 1.06);
+    d[i + 1] = Math.min(255, lum * 0.97);
+    d[i + 2] = Math.min(255, lum * 0.86);
   }
   ctx.putImageData(id, 0, 0);
-  const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.30, w / 2, h / 2, h * 0.85);
+
+  // Film grain overlay
+  const grainC = document.createElement("canvas");
+  grainC.width = w; grainC.height = h;
+  const gctx = grainC.getContext("2d")!;
+  const gid = gctx.createImageData(w, h);
+  const gd = gid.data;
+  for (let i = 0; i < gd.length; i += 4) {
+    const n = (Math.random() - 0.5) * 50;
+    gd[i] = gd[i + 1] = gd[i + 2] = 128 + n;
+    gd[i + 3] = 255;
+  }
+  gctx.putImageData(gid, 0, 0);
+  ctx.globalCompositeOperation = "overlay";
+  ctx.globalAlpha = 0.12;
+  ctx.drawImage(grainC, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 1;
+
+  // Heavy vignette — deep black corners
+  const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.18, w / 2, h / 2, h * 0.75);
   vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(1, "rgba(0,0,0,0.45)");
+  vig.addColorStop(0.5, "rgba(0,0,0,0.15)");
+  vig.addColorStop(0.8, "rgba(0,0,0,0.45)");
+  vig.addColorStop(1, "rgba(0,0,0,0.7)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, w, h);
 }
@@ -136,12 +165,9 @@ export async function composeDuetFrame(
     loadImg(p2CutoutUrl),
   ]);
 
-  // Output canvas — use 4:3 aspect ratio (portrait-style booth frame)
-  // Use the larger dimension as reference
-  const refW = Math.max(p1Img.naturalWidth, p2Img.naturalWidth);
-  const refH = Math.max(p1Img.naturalHeight, p2Img.naturalHeight);
-  const W = refW;
-  const H = Math.round(W * 3 / 4); // 4:3 aspect
+  // Fixed output canvas at 4:3 for consistent quality
+  const W = 640;
+  const H = 480;
 
   const outC = document.createElement("canvas");
   outC.width = W; outC.height = H;
@@ -151,25 +177,26 @@ export async function composeDuetFrame(
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Draw P1 shifted left — person occupies roughly center-left
-  //    Scale to fill the frame height, shift left so person is on left side
-  const p1H = H;
+  // 2. Draw P1 — slightly zoomed in, positioned left-of-center
+  //    People should overlap in the middle like they're sitting together
+  const zoom = 1.12; // slight zoom so people fill the frame
+  const p1H = H * zoom;
   const p1W = Math.round(p1Img.naturalWidth * (p1H / p1Img.naturalHeight));
-  const p1X = Math.round(W * 0.25 - p1W * 0.5); // center of P1 at 25% from left
-  const p1Y = H - p1H; // align to bottom
+  const p1X = Math.round(W * 0.38 - p1W * 0.5); // center of P1 at 38%
+  const p1Y = Math.round(H - p1H);               // align to bottom
   ctx.drawImage(p1Img, p1X, p1Y, p1W, p1H);
 
-  // 3. Draw P2 shifted right — person occupies roughly center-right
-  const p2H = H;
+  // 3. Draw P2 — same zoom, positioned right-of-center, overlapping P1
+  const p2H = H * zoom;
   const p2W = Math.round(p2Img.naturalWidth * (p2H / p2Img.naturalHeight));
-  const p2X = Math.round(W * 0.75 - p2W * 0.5); // center of P2 at 75% from left
-  const p2Y = H - p2H; // align to bottom
+  const p2X = Math.round(W * 0.62 - p2W * 0.5); // center of P2 at 62%
+  const p2Y = Math.round(H - p2H);
   ctx.drawImage(p2Img, p2X, p2Y, p2W, p2H);
 
   // 4. Apply B&W film look to the unified composite
   applyFilmLook(ctx, W, H);
 
-  return outC.toDataURL("image/jpeg", 0.90);
+  return outC.toDataURL("image/jpeg", 0.92);
 }
 
 /**
