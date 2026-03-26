@@ -354,7 +354,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             {leftPhotos.map((photo, i) => (
               <div key={i} className="relative rounded-lg overflow-hidden border-2 border-dark-brown/70">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo} alt={`Shot ${i + 1}`} className="w-full block bw-photo" style={{ aspectRatio: "4/3", objectFit: "cover" }} />
+                <img src={photo} alt={`Shot ${i + 1}`} className="w-full block bw-photo" style={{ aspectRatio: "3/4", objectFit: "cover" }} />
                 <span className="absolute top-1 left-1 bg-black/60 text-gold text-[9px] font-mono font-bold w-4 h-4 flex items-center justify-center rounded-sm">
                   {i + 1}
                 </span>
@@ -434,7 +434,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             {/* Camera viewport */}
             <div
               className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
-              style={{ aspectRatio: "4/3" }}
+              style={{ aspectRatio: "3/4" }}
             >
               {/* Camera loading */}
               {!camReady && !camError && (
@@ -526,7 +526,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                         ? "border-2 border-dark-brown/70 shadow-md"
                         : "border-2 border-dashed border-dark-brown/25"
                     }`}
-                    style={{ width: "22%", aspectRatio: "4/3" }}
+                    style={{ width: "22%", aspectRatio: "3/4" }}
                   >
                     {photo ? (
                       <>
@@ -616,7 +616,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                     src={leftPhotos[0]}
                     alt="Partner's first shot"
                     className="w-full block bw-photo"
-                    style={{ aspectRatio: "4/3", objectFit: "cover" }}
+                    style={{ aspectRatio: "3/4", objectFit: "cover" }}
                   />
                   <div className="bg-dark-brown text-gold text-center text-[9px] font-mono py-1 tracking-widest">
                     GHOST PREVIEW

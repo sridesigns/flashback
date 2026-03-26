@@ -279,7 +279,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             {/* Camera viewport — always rendered, overlays handle states */}
             <div
               className="relative w-full overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
-              style={{ aspectRatio: "4/3" }}
+              style={{ aspectRatio: "3/4" }}
             >
               {/* Permission loading */}
               {state === "permission" && (
@@ -349,7 +349,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                       ? "border-2 border-dark-brown/70 shadow-md"
                       : "border-2 border-dashed border-dark-brown/25"
                   }`}
-                  style={{ width: "22%", aspectRatio: "4/3" }}
+                  style={{ width: "22%", aspectRatio: "3/4" }}
                 >
                   {photos[i] ? (
                     <>

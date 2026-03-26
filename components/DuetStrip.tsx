@@ -121,8 +121,8 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
     if (photos.length < TOTAL_PHOTOS) return;
 
     const SCALE    = 2;
-    const frameW   = 340;          // 4:3 aspect
-    const frameH   = 255;
+    const frameW   = 255;          // 3:4 portrait aspect
+    const frameH   = 340;
     const padding  = 18;
     const gap      = 8;
     const headerH  = 68;
@@ -354,14 +354,14 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
               <div
                 key={i}
                 className="relative overflow-hidden border border-gold/8"
-                style={{ aspectRatio: "4/3" }}
+                style={{ aspectRatio: "3/4" }}
               >
                 {/* Single unified image — both people in one frame */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={displayPhotos[i]}
                   alt={`Pose & Pass shot ${i + 1}`}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover bw-photo"
                 />
 
                 {/* Booth vignette */}

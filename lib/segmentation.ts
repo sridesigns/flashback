@@ -165,9 +165,9 @@ export async function composeDuetFrame(
     loadImg(p2CutoutUrl),
   ]);
 
-  // Fixed output canvas at 4:3 for consistent quality
-  const W = 640;
-  const H = 480;
+  // Fixed output canvas at 3:4 portrait for consistent quality
+  const W = 480;
+  const H = 640;
 
   const outC = document.createElement("canvas");
   outC.width = W; outC.height = H;

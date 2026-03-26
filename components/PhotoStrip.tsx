@@ -93,8 +93,8 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoS
   const handleDownload = useCallback(async () => {
     // ── Layout constants (logical pixels) ──────────────────────────────────
     const SCALE        = 2;          // render at 2× for crisp output
-    const photoW       = 400;        // logical width per photo
-    const photoH       = 300;        // 4:3 classic photo-booth ratio
+    const photoW       = 300;        // logical width per photo
+    const photoH       = 400;        // 3:4 portrait photo-booth ratio
     const padding      = 20;
     const gap          = 12;
     const headerH      = 64;
@@ -333,7 +333,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoS
                     src={photo}
                     alt={`Photo ${i + 1}`}
                     className="w-full block bw-photo"
-                    style={{ aspectRatio: "4/3", objectFit: "cover" }}
+                    style={{ aspectRatio: "3/4", objectFit: "cover" }}
                   />
                   <span className="absolute top-1 left-1 bg-black/60 text-gold text-[9px] font-mono font-bold w-4 h-4 flex items-center justify-center rounded-sm z-10">
                     {i + 1}
