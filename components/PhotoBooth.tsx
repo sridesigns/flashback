@@ -226,7 +226,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             {/* Duet share link */}
             <div className="border-t border-dark-brown/8 pt-5 flex flex-col gap-2">
               <p className="font-sans text-xs font-semibold text-dark-brown">
-                Shoot a Duet Strip
+                Start a Pose &amp; Pass
               </p>
               <p className="font-sans text-[11px] text-warm-brown/55 leading-relaxed">
                 Share this link with a partner — they&apos;ll pose alongside your ghost and you&apos;ll both get a combined strip.
@@ -249,7 +249,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                     }}
                     className={`leather-btn ${copied ? "leather-btn-dark" : "leather-btn-secondary"} font-sans font-semibold text-sm py-3 px-6 rounded-xl w-full`}
                   >
-                    {copied ? "✓ Copied!" : "Copy Duet Link"}
+                    {copied ? "✓ Copied!" : "Copy Pose & Pass Link"}
                   </button>
                 </>
               ) : null}

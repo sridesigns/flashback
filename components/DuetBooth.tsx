@@ -264,7 +264,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   if (duetState === "loading") {
     return (
       <div className="w-full min-h-screen flex flex-col">
-        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <BoothHeader label="Pose & Pass" onBack={handleHome} />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-burnt-orange border-t-transparent rounded-full animate-spin" />
@@ -279,7 +279,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   if (duetState === "final" && leftPhotos.length > 0 && rightPhotos.length > 0) {
     return (
       <div className="w-full min-h-screen flex flex-col page-transition">
-        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <BoothHeader label="Pose & Pass" onBack={handleHome} />
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
           <div className="flex justify-center">
             <DuetStrip p1Photos={leftPhotos} p2Photos={rightPhotos} />
@@ -333,7 +333,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   if (duetState === "p1-done") {
     return (
       <div className="w-full min-h-screen flex flex-col page-transition">
-        <BoothHeader label="Duet Booth" onBack={handleHome} />
+        <BoothHeader label="Pose & Pass" onBack={handleHome} />
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
           {/* 2×2 thumbnail grid */}
           <div className="grid grid-cols-2 gap-2 w-full max-w-[240px] mx-auto md:mx-0">
@@ -354,7 +354,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                 Your shots<br />are in.
               </h2>
               <p className="font-sans text-sm text-warm-brown/65 mt-2 leading-relaxed">
-                Share this link with your partner. They&apos;ll shoot alongside your ghost — then send you the final strip.
+                Share this link with your partner. They&apos;ll pose alongside your ghost — then send you the final strip.
               </p>
             </div>
 
@@ -409,7 +409,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
   return (
     <div className="w-full min-h-screen flex flex-col">
-      <BoothHeader label="Duet Booth" onBack={handleHome} />
+      <BoothHeader label="Pose & Pass" onBack={handleHome} />
 
       <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
         <div className="flex flex-col md:grid md:grid-cols-[1fr_232px] md:gap-10 items-start gap-5">
@@ -621,7 +621,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             {/* Steps */}
             <div className="flex flex-col gap-5">
               <p className="font-sans text-[10px] text-burnt-orange uppercase tracking-[0.2em] font-semibold">
-                {role === "partner" ? "Your shoot" : "How Duet works"}
+                {role === "partner" ? "Your shoot" : "How Pose & Pass works"}
               </p>
               {sidebarSteps.map((item) => (
                 <div key={item.stat}>

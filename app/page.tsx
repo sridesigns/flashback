@@ -213,18 +213,18 @@ function DuetFeatureSection({ onOpen }: { onOpen: () => void }) {
     <section className="w-full bg-parchment/40 border-y border-dark-brown/8 py-20 md:py-28 px-6">
       <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
         <p className="font-sans text-xs text-gold uppercase tracking-[0.2em] font-semibold">
-          Duet Mode
+          Pose & Pass
         </p>
         <h2
           className="font-serif font-bold text-dark-brown leading-tight"
           style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", letterSpacing: "-0.02em" }}
         >
-          Shoot together.<br />
+          Pose together.<br />
           <span className="text-gold italic">From anywhere.</span>
         </h2>
         <p className="font-sans text-base text-warm-brown/70 max-w-sm leading-relaxed">
-          Take your shots, then share the link you get with a partner. They pose alongside your ghost —
-          one seamless B&amp;W strip, both of you, any distance.
+          Take your shots, share the link with a partner. They pose alongside your ghost —
+          one seamless B&amp;W strip, both of you, from anywhere.
         </p>
         <button
           onClick={onOpen}

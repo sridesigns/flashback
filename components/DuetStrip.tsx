@@ -153,7 +153,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.fillStyle = "#7a5535";
     ctx.font = `600 8px Arial, sans-serif`;
     ctx.letterSpacing = "4px";
-    ctx.fillText("DUET BOOTH", W / 2, padding + 36);
+    ctx.fillText("POSE & PASS", W / 2, padding + 36);
     ctx.letterSpacing = "0px";
 
     ctx.font = `700 7.5px Arial, sans-serif`;
@@ -207,6 +207,16 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
         ctx.rect(frameX, frameY, halfW, frameH);
         ctx.clip();
         drawCover(ctx, p1Imgs[i], frameX, frameY, halfW, frameH);
+        // Studio spotlight: darken background edges of P1 half (light source from right/center)
+        const vig1 = ctx.createRadialGradient(
+          frameX + halfW * 0.6, frameY + frameH / 2, frameH * 0.1,
+          frameX + halfW * 0.6, frameY + frameH / 2, frameH * 0.75
+        );
+        vig1.addColorStop(0, "rgba(0,0,0,0)");
+        vig1.addColorStop(0.55, "rgba(0,0,0,0.25)");
+        vig1.addColorStop(1, "rgba(0,0,0,0.78)");
+        ctx.fillStyle = vig1;
+        ctx.fillRect(frameX, frameY, halfW, frameH);
         ctx.restore();
       }
 
@@ -217,6 +227,16 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
         ctx.rect(frameX + halfW, frameY, halfW, frameH);
         ctx.clip();
         drawCover(ctx, p2Imgs[i], frameX + halfW, frameY, halfW, frameH);
+        // Studio spotlight: darken background edges of P2 half (light source from left/center)
+        const vig2 = ctx.createRadialGradient(
+          frameX + halfW + halfW * 0.4, frameY + frameH / 2, frameH * 0.1,
+          frameX + halfW + halfW * 0.4, frameY + frameH / 2, frameH * 0.75
+        );
+        vig2.addColorStop(0, "rgba(0,0,0,0)");
+        vig2.addColorStop(0.55, "rgba(0,0,0,0.25)");
+        vig2.addColorStop(1, "rgba(0,0,0,0.78)");
+        ctx.fillStyle = vig2;
+        ctx.fillRect(frameX + halfW, frameY, halfW, frameH);
         ctx.restore();
       }
 
@@ -227,16 +247,6 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.moveTo(frameX + halfW, frameY);
       ctx.lineTo(frameX + halfW, frameY + frameH);
       ctx.stroke();
-
-      // Unified vignette
-      const vig = ctx.createRadialGradient(
-        frameX + frameW / 2, frameY + frameH / 2, frameH * 0.15,
-        frameX + frameW / 2, frameY + frameH / 2, frameH * 0.92
-      );
-      vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(1, "rgba(0,0,0,0.30)");
-      ctx.fillStyle = vig;
-      ctx.fillRect(frameX, frameY, frameW, frameH);
 
       // Frame number badge
       ctx.fillStyle = "rgba(0,0,0,0.60)";
@@ -273,7 +283,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
 
     const n        = nextStripNumber();
     const date     = formatDate(now);
-    const filename = `CitoFoto_Duet_${n}_${date}.jpg`;
+    const filename = `CitoFoto_PoseAndPass_${n}_${date}.jpg`;
 
     const link = document.createElement("a");
     link.download = filename;
@@ -305,7 +315,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
           {/* Header */}
           <div className="text-center py-3 border-b border-gold/10">
             <p className="font-serif text-gold text-sm font-bold tracking-wider">CitoFoto</p>
-            <p className="font-sans text-warm-brown/40 text-[8px] tracking-[0.25em] uppercase mt-0.5">Duet Booth</p>
+            <p className="font-sans text-warm-brown/40 text-[8px] tracking-[0.25em] uppercase mt-0.5">Pose &amp; Pass</p>
           </div>
 
           {/* Column labels */}
@@ -323,36 +333,40 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
                 style={{ aspectRatio: "2/1" }}
               >
                 {/* P1 — left half */}
-                <div className="w-1/2 h-full overflow-hidden relative shrink-0">
+                <div className="w-1/2 h-full overflow-hidden relative shrink-0 photo-vignette">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p1Photos[i]}
                     alt={`Person 1 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover bw-photo"
+                  />
+                  {/* Studio spotlight — darkens background at edges of this half */}
+                  <div
+                    className="absolute inset-0 pointer-events-none z-10"
+                    style={{ background: "radial-gradient(ellipse 75% 85% at 60% 50%, transparent 30%, rgba(0,0,0,0.70) 100%)" }}
                   />
                 </div>
 
                 {/* Hairline seam */}
                 <div
-                  className="absolute top-0 bottom-0 z-10 pointer-events-none"
+                  className="absolute top-0 bottom-0 z-30 pointer-events-none"
                   style={{ left: "calc(50% - 0.5px)", width: "1px", background: "rgba(255,255,255,0.15)" }}
                 />
 
                 {/* P2 — right half */}
-                <div className="w-1/2 h-full overflow-hidden relative shrink-0">
+                <div className="w-1/2 h-full overflow-hidden relative shrink-0 photo-vignette">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p2Photos[i]}
                     alt={`Person 2 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover bw-photo"
+                  />
+                  {/* Studio spotlight — darkens background at edges of this half */}
+                  <div
+                    className="absolute inset-0 pointer-events-none z-10"
+                    style={{ background: "radial-gradient(ellipse 75% 85% at 40% 50%, transparent 30%, rgba(0,0,0,0.70) 100%)" }}
                   />
                 </div>
-
-                {/* Unified vignette */}
-                <div
-                  className="absolute inset-0 pointer-events-none z-20"
-                  style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.28) 100%)" }}
-                />
 
                 {/* Frame number */}
                 <span className="absolute top-1 left-1 bg-black/55 text-gold text-[7px] font-mono font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-30">
