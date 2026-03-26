@@ -292,7 +292,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoS
       <div
         ref={stripRef}
         className="relative bg-film-black rounded-sm shadow-2xl overflow-hidden"
-        style={{ width: "min(240px, 75vw)" }}
+        style={{ width: "min(180px, 50vw)" }}
       >
         {/* Film holes — left */}
         <div className="absolute left-0 top-0 bottom-0 w-5 flex flex-col items-center justify-around py-3 z-10">
