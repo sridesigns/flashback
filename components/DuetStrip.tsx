@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { removeBackground } from "@/lib/segmentation";
+import { extractPerson, composeDuetFrame } from "@/lib/segmentation";
 
 interface DuetStripProps {
   p1Photos: string[];           // B&W processed (ghost display / fallback)
@@ -74,12 +74,12 @@ function formatDate(d: Date): string {
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos }: DuetStripProps) {
-  const [p1Ready, setP1Ready] = useState<string[]>([]);
-  const [p2Ready, setP2Ready] = useState<string[]>([]);
+  // Unified composited frames — both people in ONE image per frame
+  const [composites, setComposites] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // ── Run background removal on mount / when photos change ──────────────────
+  // ── Extract cutouts → compose unified frames ──────────────────────────────
   useEffect(() => {
     if (p1Photos.length !== TOTAL_PHOTOS || p2Photos.length !== TOTAL_PHOTOS) return;
     setProcessing(true);
@@ -87,30 +87,42 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
 
     const p1Source = p1ColorPhotos?.length === TOTAL_PHOTOS ? p1ColorPhotos : p1Photos;
     const p2Source = p2ColorPhotos?.length === TOTAL_PHOTOS ? p2ColorPhotos : p2Photos;
-    const all = [...p1Source, ...p2Source];
 
     (async () => {
-      const out: string[] = [];
-      for (let i = 0; i < all.length; i++) {
-        const result = await removeBackground(all[i]);
-        out.push(result);
-        setProgress(Math.round(((i + 1) / all.length) * 100));
+      // Phase 1: Extract all 8 person cutouts (transparent PNGs)
+      const cutouts: string[] = [];
+      const allSources = [...p1Source, ...p2Source];
+      for (let i = 0; i < allSources.length; i++) {
+        const cutout = await extractPerson(allSources[i]);
+        cutouts.push(cutout);
+        setProgress(Math.round(((i + 1) / allSources.length) * 70)); // 0-70%
       }
-      setP1Ready(out.slice(0, TOTAL_PHOTOS));
-      setP2Ready(out.slice(TOTAL_PHOTOS));
+
+      const p1Cutouts = cutouts.slice(0, TOTAL_PHOTOS);
+      const p2Cutouts = cutouts.slice(TOTAL_PHOTOS);
+
+      // Phase 2: Compose unified frames (both people in one image)
+      const unified: string[] = [];
+      for (let i = 0; i < TOTAL_PHOTOS; i++) {
+        const frame = await composeDuetFrame(p1Cutouts[i], p2Cutouts[i]);
+        unified.push(frame);
+        setProgress(70 + Math.round(((i + 1) / TOTAL_PHOTOS) * 30)); // 70-100%
+      }
+
+      setComposites(unified);
       setProcessing(false);
     })();
   }, [p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos]);
 
   // ── Download ────────────────────────────────────────────────────────────────
   const handleDownload = useCallback(async () => {
-    const photosToUse1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
-    const photosToUse2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
+    // Use unified composites, fall back to B&W originals
+    const photos = composites.length === TOTAL_PHOTOS ? composites : p1Photos;
+    if (photos.length < TOTAL_PHOTOS) return;
 
     const SCALE    = 2;
-    const frameW   = 440;
-    const frameH   = 230;
-    const halfW    = frameW / 2;
+    const frameW   = 340;          // 4:3 aspect
+    const frameH   = 255;
     const padding  = 18;
     const gap      = 8;
     const headerH  = 68;
@@ -205,18 +217,15 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
         img.src = src;
       });
 
-    let p1Imgs: HTMLImageElement[], p2Imgs: HTMLImageElement[];
+    let imgs: HTMLImageElement[];
     try {
-      [p1Imgs, p2Imgs] = await Promise.all([
-        Promise.all(photosToUse1.map(loadImg)),
-        Promise.all(photosToUse2.map(loadImg)),
-      ]);
+      imgs = await Promise.all(photos.map(loadImg));
     } catch (e) {
       console.error("Failed to load images", e);
       return;
     }
 
-    // ── Draw each frame ───────────────────────────────────────────────────────
+    // ── Draw each frame (unified — both people in one image) ──────────────────
     for (let i = 0; i < TOTAL_PHOTOS; i++) {
       const frameX = px;
       const frameY = headerH + padding + i * (frameH + gap);
@@ -225,35 +234,17 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
       ctx.fillStyle = "#080402";
       ctx.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6);
 
-      // P1 — left half
-      if (p1Imgs[i]) {
+      // Draw unified composite — cover-crop to fill frame
+      if (imgs[i]) {
         ctx.save();
         ctx.beginPath();
-        ctx.rect(frameX, frameY, halfW, frameH);
+        ctx.rect(frameX, frameY, frameW, frameH);
         ctx.clip();
-        drawCover(ctx, p1Imgs[i], frameX, frameY, halfW, frameH);
+        drawCover(ctx, imgs[i], frameX, frameY, frameW, frameH);
         ctx.restore();
       }
 
-      // P2 — right half
-      if (p2Imgs[i]) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(frameX + halfW, frameY, halfW, frameH);
-        ctx.clip();
-        drawCover(ctx, p2Imgs[i], frameX + halfW, frameY, halfW, frameH);
-        ctx.restore();
-      }
-
-      // Center divider line
-      ctx.strokeStyle = "rgba(201,168,76,0.15)";
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(frameX + halfW, frameY);
-      ctx.lineTo(frameX + halfW, frameY + frameH);
-      ctx.stroke();
-
-      // Unified vignette across the full frame (booth-style)
+      // Vignette across the full frame
       const vig = ctx.createRadialGradient(
         frameX + frameW / 2, frameY + frameH / 2, frameH * 0.25,
         frameX + frameW / 2, frameY + frameH / 2, frameH * 0.88
@@ -305,7 +296,7 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
     link.download = filename;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
-  }, [p1Photos, p2Photos, p1Ready, p2Ready]);
+  }, [p1Photos, composites]);
 
   // ── Processing state ────────────────────────────────────────────────────────
   if (processing) {
@@ -329,9 +320,9 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
     );
   }
 
-  const displayP1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
-  const displayP2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
-  const frameCount = Math.min(displayP1.length, displayP2.length, TOTAL_PHOTOS);
+  // Use unified composites for display
+  const displayPhotos = composites.length === TOTAL_PHOTOS ? composites : p1Photos;
+  const frameCount = Math.min(displayPhotos.length, TOTAL_PHOTOS);
 
   // ── Strip ──────────────────────────────────────────────────────────────────
   return (
@@ -357,38 +348,23 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
             <p className="font-sans text-warm-brown/40 text-[8px] tracking-[0.25em] uppercase mt-0.5">Pose &amp; Pass</p>
           </div>
 
-          {/* Frames */}
+          {/* Frames — unified composites, 4:3 aspect ratio */}
           <div className="flex flex-col gap-1.5 py-2">
             {Array.from({ length: frameCount }).map((_, i) => (
               <div
                 key={i}
                 className="relative overflow-hidden border border-gold/8"
-                style={{ aspectRatio: "2/1" }}
+                style={{ aspectRatio: "4/3" }}
               >
-                {/* P1 — left half */}
-                <div className="absolute top-0 left-0 h-full w-1/2 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={displayP1[i]}
-                    alt={`Person 1 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
+                {/* Single unified image — both people in one frame */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={displayPhotos[i]}
+                  alt={`Pose & Pass shot ${i + 1}`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
 
-                {/* P2 — right half */}
-                <div className="absolute top-0 right-0 h-full w-1/2 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={displayP2[i]}
-                    alt={`Person 2 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Center divider */}
-                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-gold/15 z-10 pointer-events-none" />
-
-                {/* Unified booth vignette */}
+                {/* Booth vignette */}
                 <div
                   className="absolute inset-0 pointer-events-none z-20"
                   style={{
