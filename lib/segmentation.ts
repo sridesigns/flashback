@@ -1,123 +1,143 @@
 /**
- * Client-side background removal using MediaPipe Selfie Segmentation.
- * Extracts the person from each photo and composites them onto a
- * neutral "photo booth backdrop" so both people look like they're
- * in the same studio regardless of where they actually are.
- *
- * Model (~4 MB) is fetched from jsDelivr CDN and cached by the browser.
- * Processing is serialized to avoid the single-callback MediaPipe limitation.
+ * Background removal for Pose & Pass.
+ * Runs MediaPipe SelfieSegmentation (model 1 = landscape, higher quality)
+ * on COLOR photos, composites person onto neutral backdrop,
+ * then applies B&W film look to the composite.
  */
 
-// Neutral warm-gray photo booth backdrop — looks like a studio curtain in B&W
-export const BOOTH_BACKDROP = "#C2B8AE";
+// Warm neutral studio backdrop
+export const BOOTH_BACKDROP = "#DDD9D0";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _seg: any = null;
+let _segmenter: any = null;
 let _initPromise: Promise<unknown> | null = null;
 
 async function getSegmenter() {
-  if (_seg) return _seg;
-  if (!_initPromise) {
-    _initPromise = (async () => {
-      // Dynamic import keeps this out of the SSR bundle
-      const { SelfieSegmentation } = await import("@mediapipe/selfie_segmentation");
-      const seg = new SelfieSegmentation({
-        locateFile: (file: string) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`,
-      });
-      // modelSelection 1 = landscape (better at capturing full body / wider shots)
-      seg.setOptions({ modelSelection: 1 });
-      _seg = seg;
-      return seg;
-    })();
-  }
+  if (_segmenter) return _segmenter;
+  if (_initPromise) return _initPromise;
+
+  _initPromise = (async () => {
+    // Dynamic import to avoid SSR issues
+    const { SelfieSegmentation } = await import("@mediapipe/selfie_segmentation");
+    const seg = new SelfieSegmentation({
+      locateFile: (f: string) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${f}`,
+    });
+    seg.setOptions({ modelSelection: 1 }); // 1 = landscape = highest quality
+    await seg.initialize();
+    _segmenter = seg;
+    return seg;
+  })();
+
   return _initPromise;
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+// Sequential queue — SelfieSegmentation has a single onResults callback
+let _queue = Promise.resolve<string>("");
+
+function loadImg(src: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onload = () => res(img);
+    img.onerror = rej;
     img.src = src;
   });
 }
 
-// Serialization queue — MediaPipe stores only ONE onResults callback at a time.
-// Running sends concurrently would cause callbacks to overwrite each other.
-let _queue: Promise<unknown> = Promise.resolve();
-
-async function processOne(
-  img: HTMLImageElement,
-  bgR: number, bgG: number, bgB: number
-): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const seg: any = await getSegmenter();
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-
-  return new Promise<string>((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    seg.onResults((results: any) => {
-      try {
-        const maskCanvas = document.createElement("canvas");
-        maskCanvas.width = w; maskCanvas.height = h;
-        const mCtx = maskCanvas.getContext("2d")!;
-        mCtx.drawImage(results.segmentationMask, 0, 0, w, h);
-        const maskData = mCtx.getImageData(0, 0, w, h).data;
-
-        const imgCanvas = document.createElement("canvas");
-        imgCanvas.width = w; imgCanvas.height = h;
-        const iCtx = imgCanvas.getContext("2d")!;
-        iCtx.drawImage(img, 0, 0, w, h);
-        const imgData = iCtx.getImageData(0, 0, w, h).data;
-
-        // Blend: keep person pixels, replace background with booth backdrop
-        // MediaPipe mask: red channel ≈ 255 where person, ≈ 0 where background.
-        const out = new Uint8ClampedArray(w * h * 4);
-        for (let i = 0; i < maskData.length; i += 4) {
-          const p = maskData[i] / 255;   // person probability 0–1
-          const q = 1 - p;               // background probability
-          out[i]     = imgData[i]     * p + bgR * q;
-          out[i + 1] = imgData[i + 1] * p + bgG * q;
-          out[i + 2] = imgData[i + 2] * p + bgB * q;
-          out[i + 3] = 255;
-        }
-
-        const outCanvas = document.createElement("canvas");
-        outCanvas.width = w; outCanvas.height = h;
-        outCanvas.getContext("2d")!.putImageData(new ImageData(out, w, h), 0, 0);
-        resolve(outCanvas.toDataURL("image/jpeg", 0.92));
-      } catch (e) {
-        reject(e);
-      }
-    });
-
-    seg.send({ image: img }).catch(reject);
-  });
+/** Apply B&W film look in-place on a canvas context. */
+function applyFilmLook(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const id = ctx.getImageData(0, 0, w, h);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let lum = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    lum = Math.min(255, Math.max(0, (lum - 128) * 1.2 + 128));
+    d[i]     = Math.min(255, lum * 1.02);
+    d[i + 1] = Math.min(255, lum * 0.98);
+    d[i + 2] = Math.min(255, lum * 0.92);
+  }
+  ctx.putImageData(id, 0, 0);
+  const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.30, w / 2, h / 2, h * 0.85);
+  vig.addColorStop(0, "rgba(0,0,0,0)");
+  vig.addColorStop(1, "rgba(0,0,0,0.45)");
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, w, h);
 }
 
 /**
- * Remove background from a single photo and replace with a neutral booth backdrop.
- * Calls are automatically serialized — safe to call for multiple photos in parallel.
- * Falls back to the original photo if segmentation fails.
+ * Remove background from a COLOR photo, composite on neutral backdrop,
+ * apply B&W film look. Returns processed JPEG data URL.
+ * Falls back to applying B&W film look directly if segmentation fails.
  */
-export function removeBackground(
-  dataUrl: string,
-  bgHex: string = BOOTH_BACKDROP
-): Promise<string> {
-  const r = parseInt(bgHex.slice(1, 3), 16);
-  const g = parseInt(bgHex.slice(3, 5), 16);
-  const b = parseInt(bgHex.slice(5, 7), 16);
+export function removeBackground(colorPhotoUrl: string): Promise<string> {
+  const result = new Promise<string>((resolve) => {
+    _queue = _queue.then(async () => {
+      try {
+        const seg = await getSegmenter();
+        const img = await loadImg(colorPhotoUrl);
+        const W = img.naturalWidth, H = img.naturalHeight;
 
-  // Chain onto the queue so each image is processed one at a time
-  const task: Promise<string> = _queue.then(
-    () => loadImage(dataUrl).then(img => processOne(img, r, g, b)),
-    () => loadImage(dataUrl).then(img => processOne(img, r, g, b))
-  ).catch(() => dataUrl); // graceful fallback
+        // 1. Draw source image to canvas
+        const srcC = document.createElement("canvas");
+        srcC.width = W; srcC.height = H;
+        const srcCtx = srcC.getContext("2d")!;
+        srcCtx.drawImage(img, 0, 0);
 
-  // Update queue tail (swallow errors so the queue never breaks)
-  _queue = task.then(() => undefined, () => undefined);
+        // 2. Run segmentation — get mask canvas
+        const maskC = await new Promise<HTMLCanvasElement>((res) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          seg.onResults((r: any) => res(r.segmentationMask));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          seg.send({ image: srcC as any });
+        });
 
-  return task;
+        // 3. Build soft-edge person cutout using destination-in + blurred mask
+        const personC = document.createElement("canvas");
+        personC.width = W; personC.height = H;
+        const personCtx = personC.getContext("2d")!;
+        personCtx.drawImage(img, 0, 0);           // draw original color image
+
+        // Draw a blurred version of the mask to erase edges softly
+        const blurredMaskC = document.createElement("canvas");
+        blurredMaskC.width = W; blurredMaskC.height = H;
+        const blurCtx = blurredMaskC.getContext("2d")!;
+        blurCtx.filter = `blur(5px)`;
+        blurCtx.drawImage(maskC, 0, 0, W, H);     // scale mask to source size
+        blurCtx.filter = "none";
+
+        // Use blurred mask as alpha cutout
+        personCtx.globalCompositeOperation = "destination-in";
+        personCtx.drawImage(blurredMaskC, 0, 0);
+
+        // 4. Composite: backdrop → person
+        const outC = document.createElement("canvas");
+        outC.width = W; outC.height = H;
+        const outCtx = outC.getContext("2d")!;
+        outCtx.fillStyle = BOOTH_BACKDROP;
+        outCtx.fillRect(0, 0, W, H);
+        outCtx.drawImage(personC, 0, 0);           // person over neutral backdrop
+
+        // 5. Apply B&W film look to the composite
+        applyFilmLook(outCtx, W, H);
+
+        resolve(outC.toDataURL("image/jpeg", 0.88));
+      } catch (err) {
+        console.warn("Background removal failed, using fallback:", err);
+        // Fallback: apply film look to the color photo directly
+        try {
+          const img = await loadImg(colorPhotoUrl);
+          const W = img.naturalWidth, H = img.naturalHeight;
+          const c = document.createElement("canvas");
+          c.width = W; c.height = H;
+          const ctx = c.getContext("2d")!;
+          ctx.drawImage(img, 0, 0);
+          applyFilmLook(ctx, W, H);
+          resolve(c.toDataURL("image/jpeg", 0.88));
+        } catch {
+          resolve(colorPhotoUrl);
+        }
+      }
+      return "";
+    });
+  });
+  return result;
 }

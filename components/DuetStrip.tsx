@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { removeBackground } from "@/lib/segmentation";
 
 interface DuetStripProps {
-  p1Photos: string[]; // Person 1 — left side
-  p2Photos: string[]; // Person 2 — right side
+  p1Photos: string[];           // B&W processed (ghost display / fallback)
+  p2Photos: string[];
+  p1ColorPhotos?: string[];     // color (for segmentation) — preferred
+  p2ColorPhotos?: string[];
 }
 
 const TOTAL_PHOTOS = 4;
-
-// Warm neutral studio backdrop — matches a plain booth wall
-const BACKDROP = "#D0CBC2";
 
 // ─── Canvas helpers ────────────────────────────────────────────────────────────
 
@@ -32,45 +32,6 @@ function drawCover(
     sx = 0; sy = (img.naturalHeight - sh) / 2;
   }
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-}
-
-/**
- * Draw img cover-cropped onto an offscreen canvas of (w × h),
- * then fade one edge to transparent using destination-in masking.
- * side="right" fades the right edge; side="left" fades the left edge.
- * Returns the composited offscreen canvas.
- */
-function makeBlendedHalf(
-  img: HTMLImageElement,
-  w: number, h: number,
-  side: "left" | "right",
-  blendZone: number   // px width of the fade zone
-): HTMLCanvasElement {
-  const oc = document.createElement("canvas");
-  oc.width = w; oc.height = h;
-  const ctx = oc.getContext("2d")!;
-
-  // Draw the photo cover-cropped
-  drawCover(ctx, img, 0, 0, w, h);
-
-  // Punch out the fade edge with destination-in gradient mask
-  const grad = side === "right"
-    ? ctx.createLinearGradient(w - blendZone, 0, w, 0)   // fade near right edge
-    : ctx.createLinearGradient(0, 0, blendZone, 0);       // fade near left edge
-
-  if (side === "right") {
-    grad.addColorStop(0, "rgba(0,0,0,1)");   // keep
-    grad.addColorStop(1, "rgba(0,0,0,0)");   // erase
-  } else {
-    grad.addColorStop(0, "rgba(0,0,0,0)");   // erase
-    grad.addColorStop(1, "rgba(0,0,0,1)");   // keep
-  }
-
-  ctx.globalCompositeOperation = "destination-in";
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  return oc;
 }
 
 function roundRect(
@@ -112,16 +73,44 @@ function formatDate(d: Date): string {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
-  const frameCount = Math.min(p1Photos.length, p2Photos.length, TOTAL_PHOTOS);
+export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos }: DuetStripProps) {
+  const [p1Ready, setP1Ready] = useState<string[]>([]);
+  const [p2Ready, setP2Ready] = useState<string[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // ── Run background removal on mount / when photos change ──────────────────
+  useEffect(() => {
+    if (p1Photos.length !== TOTAL_PHOTOS || p2Photos.length !== TOTAL_PHOTOS) return;
+    setProcessing(true);
+    setProgress(0);
+
+    const p1Source = p1ColorPhotos?.length === TOTAL_PHOTOS ? p1ColorPhotos : p1Photos;
+    const p2Source = p2ColorPhotos?.length === TOTAL_PHOTOS ? p2ColorPhotos : p2Photos;
+    const all = [...p1Source, ...p2Source];
+
+    (async () => {
+      const out: string[] = [];
+      for (let i = 0; i < all.length; i++) {
+        const result = await removeBackground(all[i]);
+        out.push(result);
+        setProgress(Math.round(((i + 1) / all.length) * 100));
+      }
+      setP1Ready(out.slice(0, TOTAL_PHOTOS));
+      setP2Ready(out.slice(TOTAL_PHOTOS));
+      setProcessing(false);
+    })();
+  }, [p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos]);
 
   // ── Download ────────────────────────────────────────────────────────────────
   const handleDownload = useCallback(async () => {
+    const photosToUse1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
+    const photosToUse2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
+
     const SCALE    = 2;
     const frameW   = 440;
-    const frameH   = 280;   // slightly taller → more portrait-like
+    const frameH   = 230;
     const halfW    = frameW / 2;
-    const blendZone = Math.round(halfW * 0.38); // 38% fade zone each side
     const padding  = 18;
     const gap      = 8;
     const headerH  = 68;
@@ -219,8 +208,8 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     let p1Imgs: HTMLImageElement[], p2Imgs: HTMLImageElement[];
     try {
       [p1Imgs, p2Imgs] = await Promise.all([
-        Promise.all(p1Photos.map(loadImg)),
-        Promise.all(p2Photos.map(loadImg)),
+        Promise.all(photosToUse1.map(loadImg)),
+        Promise.all(photosToUse2.map(loadImg)),
       ]);
     } catch (e) {
       console.error("Failed to load images", e);
@@ -236,31 +225,33 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.fillStyle = "#080402";
       ctx.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6);
 
-      // Neutral studio backdrop fills the frame
-      ctx.fillStyle = BACKDROP;
-      ctx.fillRect(frameX, frameY, frameW, frameH);
-
-      // P1 — left half, fades into backdrop at the right edge
+      // P1 — left half
       if (p1Imgs[i]) {
-        const oc1 = makeBlendedHalf(p1Imgs[i], halfW, frameH, "right", blendZone);
         ctx.save();
         ctx.beginPath();
         ctx.rect(frameX, frameY, halfW, frameH);
         ctx.clip();
-        ctx.drawImage(oc1, frameX, frameY);
+        drawCover(ctx, p1Imgs[i], frameX, frameY, halfW, frameH);
         ctx.restore();
       }
 
-      // P2 — right half, fades into backdrop at the left edge
+      // P2 — right half
       if (p2Imgs[i]) {
-        const oc2 = makeBlendedHalf(p2Imgs[i], halfW, frameH, "left", blendZone);
         ctx.save();
         ctx.beginPath();
         ctx.rect(frameX + halfW, frameY, halfW, frameH);
         ctx.clip();
-        ctx.drawImage(oc2, frameX + halfW, frameY);
+        drawCover(ctx, p2Imgs[i], frameX + halfW, frameY, halfW, frameH);
         ctx.restore();
       }
+
+      // Center divider line
+      ctx.strokeStyle = "rgba(201,168,76,0.15)";
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(frameX + halfW, frameY);
+      ctx.lineTo(frameX + halfW, frameY + frameH);
+      ctx.stroke();
 
       // Unified vignette across the full frame (booth-style)
       const vig = ctx.createRadialGradient(
@@ -314,7 +305,33 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     link.download = filename;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
-  }, [p1Photos, p2Photos]);
+  }, [p1Photos, p2Photos, p1Ready, p2Ready]);
+
+  // ── Processing state ────────────────────────────────────────────────────────
+  if (processing) {
+    return (
+      <div className="flex flex-col items-center gap-5 py-10 w-full">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 rounded-full border-4 border-dark-brown/10" />
+          <div className="absolute inset-0 rounded-full border-4 border-burnt-orange border-t-transparent animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-serif text-sm font-bold text-burnt-orange">{progress}<span className="text-[10px]">%</span></span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="font-serif text-dark-brown font-semibold text-sm">Placing you in the same booth…</p>
+          <p className="font-sans text-xs text-warm-brown/45 mt-1">Removing backgrounds &amp; compositing</p>
+        </div>
+        <div className="w-36 h-1 bg-dark-brown/10 rounded-full overflow-hidden">
+          <div className="h-full bg-burnt-orange rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+    );
+  }
+
+  const displayP1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
+  const displayP2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
+  const frameCount = Math.min(displayP1.length, displayP2.length, TOTAL_PHOTOS);
 
   // ── Strip ──────────────────────────────────────────────────────────────────
   return (
@@ -346,39 +363,30 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
               <div
                 key={i}
                 className="relative overflow-hidden border border-gold/8"
-                style={{ aspectRatio: "11/7", background: BACKDROP }}
+                style={{ aspectRatio: "2/1" }}
               >
-                {/* P1 — left half, fades right into backdrop */}
-                <div
-                  className="absolute top-0 left-0 h-full w-1/2 overflow-hidden"
-                >
+                {/* P1 — left half */}
+                <div className="absolute top-0 left-0 h-full w-1/2 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={p1Photos[i]}
+                    src={displayP1[i]}
                     alt={`Person 1 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover bw-photo"
-                    style={{
-                      maskImage: "linear-gradient(to right, black 45%, transparent 100%)",
-                      WebkitMaskImage: "linear-gradient(to right, black 45%, transparent 100%)",
-                    }}
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 </div>
 
-                {/* P2 — right half, fades left into backdrop */}
-                <div
-                  className="absolute top-0 right-0 h-full w-1/2 overflow-hidden"
-                >
+                {/* P2 — right half */}
+                <div className="absolute top-0 right-0 h-full w-1/2 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={p2Photos[i]}
+                    src={displayP2[i]}
                     alt={`Person 2 shot ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover bw-photo"
-                    style={{
-                      maskImage: "linear-gradient(to left, black 45%, transparent 100%)",
-                      WebkitMaskImage: "linear-gradient(to left, black 45%, transparent 100%)",
-                    }}
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 </div>
+
+                {/* Center divider */}
+                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-gold/15 z-10 pointer-events-none" />
 
                 {/* Unified booth vignette */}
                 <div

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { captureFromVideo, compressForUrl, encodeForUrl, decodeFromUrl } from "@/lib/photoUtils";
+import { captureFromVideo, captureColorFromVideo, compressForUrl, compressForSegmentation, encodeForUrl, decodeFromUrl } from "@/lib/photoUtils";
 import { uploadBlob, downloadBlob } from "@/lib/blobStore";
 import DuetStrip from "./DuetStrip";
 
@@ -44,6 +44,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
   const [leftPhotos,  setLeftPhotos]  = useState<string[]>([]); // P1
   const [rightPhotos, setRightPhotos] = useState<string[]>([]); // P2
+  const [leftColorPhotos,  setLeftColorPhotos]  = useState<string[]>([]); // P1 color (for segmentation)
+  const [rightColorPhotos, setRightColorPhotos] = useState<string[]>([]); // P2 color (for segmentation)
 
   const [countdown,   setCountdown]   = useState(COUNTDOWN_SECS);
   const [currentShot, setCurrentShot] = useState(0);
@@ -97,9 +99,10 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
   useEffect(() => {
     const hash = window.location.hash;
 
-    const applyPayload = (payload: { phase: string; p1: string[]; p2?: string[] } | null) => {
+    const applyPayload = (payload: { phase: string; p1: string[]; p1c?: string[]; p2?: string[]; p2c?: string[] } | null) => {
       if (payload?.phase === "p1") {
         setLeftPhotos(payload.p1);
+        if (payload.p1c) setLeftColorPhotos(payload.p1c);
         setRole("partner");
       } else if (payload?.phase === "final" && payload.p2) {
         setLeftPhotos(payload.p1);
@@ -155,11 +158,13 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
         if (!video) return;
 
         const dataUrl = captureFromVideo(video, facingMode);
+        const colorUrl = captureColorFromVideo(video, facingMode);
         setShowFlash(true);
         setTimeout(() => setShowFlash(false), 400);
 
         if (dataUrl) {
           if (role === "initiator") {
+            if (colorUrl) setLeftColorPhotos(prev => [...prev, colorUrl]);
             setLeftPhotos(prev => {
               const next     = [...prev, dataUrl];
               const nextShot = shot + 1;
@@ -173,6 +178,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               return next;
             });
           } else {
+            if (colorUrl) setRightColorPhotos(prev => [...prev, colorUrl]);
             setRightPhotos(prev => {
               const next     = [...prev, dataUrl];
               const nextShot = shot + 1;
@@ -199,7 +205,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
     if (duetState !== "p1-done" || leftPhotos.length !== TOTAL_SHOTS || shareLink) return;
     setLinkLoading(true);
     Promise.all(leftPhotos.map(compressForUrl)).then(async compressed => {
-      const payload: { phase: "p1"; p1: string[] } = { phase: "p1", p1: compressed };
+      const compressedColor = await Promise.all(leftColorPhotos.map(compressForSegmentation));
+      const payload: { phase: "p1"; p1: string[]; p1c: string[] } = { phase: "p1", p1: compressed, p1c: compressedColor };
       try {
         const id = await uploadBlob(payload);
         setShareLink(`${window.location.origin}/#duet=jb_${id}`);
@@ -244,6 +251,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
   const handleRetake = useCallback(() => {
     setLeftPhotos([]);
+    setLeftColorPhotos([]);
+    setRightColorPhotos([]);
     setCurrentShot(0);
     setCountdown(COUNTDOWN_SECS);
     setShareLink(null);
@@ -282,7 +291,12 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
         <BoothHeader label="Pose & Pass" onBack={handleHome} />
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
           <div className="flex justify-center">
-            <DuetStrip p1Photos={leftPhotos} p2Photos={rightPhotos} />
+            <DuetStrip
+              p1Photos={leftPhotos}
+              p2Photos={rightPhotos}
+              p1ColorPhotos={leftColorPhotos.length === TOTAL_SHOTS ? leftColorPhotos : undefined}
+              p2ColorPhotos={rightColorPhotos.length === TOTAL_SHOTS ? rightColorPhotos : undefined}
+            />
           </div>
           <div className="flex flex-col gap-5 md:pt-4">
             <div>
