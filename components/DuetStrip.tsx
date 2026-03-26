@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { removeBackground, BOOTH_BACKDROP } from "@/lib/segmentation";
+import { useCallback } from "react";
 
 interface DuetStripProps {
-  p1Photos: string[]; // initiator — composited on LEFT
-  p2Photos: string[]; // partner  — composited on RIGHT
+  p1Photos: string[]; // Person 1 — rendered on LEFT
+  p2Photos: string[]; // Person 2 — rendered on RIGHT
 }
 
 const TOTAL_PHOTOS = 4;
@@ -71,47 +70,13 @@ function formatDate(d: Date): string {
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
-  const [p1Ready, setP1Ready] = useState<string[]>([]);
-  const [p2Ready, setP2Ready] = useState<string[]>([]);
-  const [processing, setProcessing] = useState(true);
-  const [progress, setProgress]   = useState(0);
-  const [segFailed, setSegFailed] = useState(false);
-
-  // ── Background removal ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (p1Photos.length !== TOTAL_PHOTOS || p2Photos.length !== TOTAL_PHOTOS) return;
-
-    setProcessing(true);
-    setProgress(0);
-    setSegFailed(false);
-
-    const all = [...p1Photos, ...p2Photos];
-    const out: string[] = [];
-
-    (async () => {
-      let anyFailed = false;
-      for (let i = 0; i < all.length; i++) {
-        const result = await removeBackground(all[i], BOOTH_BACKDROP);
-        if (result === all[i]) anyFailed = true; // fallback means segmentation failed
-        out.push(result);
-        setProgress(Math.round(((i + 1) / all.length) * 100));
-      }
-      setP1Ready(out.slice(0, TOTAL_PHOTOS));
-      setP2Ready(out.slice(TOTAL_PHOTOS));
-      if (anyFailed) setSegFailed(true);
-      setProcessing(false);
-    })();
-  }, [p1Photos, p2Photos]);
+  const frameCount = Math.min(p1Photos.length, p2Photos.length, TOTAL_PHOTOS);
 
   // ── Download ────────────────────────────────────────────────────────────────
   const handleDownload = useCallback(async () => {
-    const photos1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
-    const photos2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
-
-    // ── Layout ─────────────────────────────────────────────────────────────
     const SCALE    = 2;
-    const frameW   = 440;  // total width (P1 left + P2 right side-by-side)
-    const frameH   = 230;  // each half ~square portrait
+    const frameW   = 440;
+    const frameH   = 230;
     const halfW    = frameW / 2;
     const padding  = 18;
     const gap      = 8;
@@ -135,10 +100,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.scale(SCALE, SCALE);
     const W = logW, H = logH;
 
-    // ── Strip background ────────────────────────────────────────────────────
-    ctx.fillStyle = "#12090400";
-    ctx.fillRect(0, 0, W, H);
-    // Rich dark base — like exposed film
+    // ── Strip background ──────────────────────────────────────────────────────
     const baseFill = ctx.createLinearGradient(0, 0, 0, H);
     baseFill.addColorStop(0, "#1C0F08");
     baseFill.addColorStop(0.5, "#140A05");
@@ -146,18 +108,11 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.fillStyle = baseFill;
     ctx.fillRect(0, 0, W, H);
 
-    // Subtle warm horizontal grain bands
-    for (let y = 0; y < H; y += 4) {
-      ctx.fillStyle = `rgba(${y % 8 === 0 ? "80,30,10" : "0,0,0"},0.025)`;
-      ctx.fillRect(0, y, W, 2);
-    }
-
-    // ── Sidebar strips ──────────────────────────────────────────────────────
+    // ── Sidebar strips ────────────────────────────────────────────────────────
     ctx.fillStyle = "#0D0603";
     ctx.fillRect(0, 0, sidebarW, H);
     ctx.fillRect(W - sidebarW, 0, sidebarW, H);
 
-    // Sidebar inner edge lines
     ctx.strokeStyle = "rgba(201,168,76,0.10)";
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -165,48 +120,42 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.moveTo(W - sidebarW, 0); ctx.lineTo(W - sidebarW, H);
     ctx.stroke();
 
-    // ── Film perforations (authentic sprocket holes) ─────────────────────────
+    // ── Film perforations ─────────────────────────────────────────────────────
     const holesCount = Math.floor(H / holeGap);
     for (let i = 0; i < holesCount; i++) {
       const hy  = i * holeGap + (holeGap - holeH) / 2;
       const hxL = (sidebarW - holeW) / 2;
       const hxR = W - sidebarW + (sidebarW - holeW) / 2;
 
-      // Punched-through hole (very dark, matches negative)
       ctx.fillStyle = "#050302";
       roundRect(ctx, hxL, hy, holeW, holeH, 2); ctx.fill();
       roundRect(ctx, hxR, hy, holeW, holeH, 2); ctx.fill();
 
-      // Subtle highlight on top edge — gives the "punched through base" depth
       ctx.fillStyle = "rgba(255,255,255,0.06)";
       roundRect(ctx, hxL + 1, hy + 1, holeW - 2, 2, 1); ctx.fill();
       roundRect(ctx, hxR + 1, hy + 1, holeW - 2, 2, 1); ctx.fill();
 
-      // Thin gold rim
       ctx.strokeStyle = "rgba(201,168,76,0.15)";
       ctx.lineWidth = 0.5;
       roundRect(ctx, hxL, hy, holeW, holeH, 2); ctx.stroke();
       roundRect(ctx, hxR, hy, holeW, holeH, 2); ctx.stroke();
     }
 
-    // ── Header ──────────────────────────────────────────────────────────────
+    // ── Header ────────────────────────────────────────────────────────────────
     const px = sidebarW + padding;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
 
-    // Wordmark
     ctx.fillStyle = "#C9A84C";
     ctx.font = `bold 19px Georgia, "Times New Roman", serif`;
     ctx.fillText("CitoFoto", W / 2, padding + 20);
 
-    // Subtitle
     ctx.fillStyle = "#7a5535";
     ctx.font = `600 8px Arial, sans-serif`;
     ctx.letterSpacing = "4px";
     ctx.fillText("DUET BOOTH", W / 2, padding + 36);
     ctx.letterSpacing = "0px";
 
-    // Person column labels
     ctx.font = `700 7.5px Arial, sans-serif`;
     ctx.letterSpacing = "1.5px";
     ctx.fillStyle = "rgba(201,168,76,0.40)";
@@ -216,7 +165,6 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.fillText("PERSON 2", px + frameW - 4, padding + 54);
     ctx.letterSpacing = "0px";
 
-    // Header rule
     ctx.strokeStyle = "rgba(201,168,76,0.15)";
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -224,7 +172,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     ctx.lineTo(W - sidebarW - padding, headerH - 2);
     ctx.stroke();
 
-    // ── Load processed images ───────────────────────────────────────────────
+    // ── Load images ───────────────────────────────────────────────────────────
     const loadImg = (src: string): Promise<HTMLImageElement> =>
       new Promise((res, rej) => {
         const img = new Image();
@@ -236,28 +184,23 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     let p1Imgs: HTMLImageElement[], p2Imgs: HTMLImageElement[];
     try {
       [p1Imgs, p2Imgs] = await Promise.all([
-        Promise.all(photos1.map(loadImg)),
-        Promise.all(photos2.map(loadImg)),
+        Promise.all(p1Photos.map(loadImg)),
+        Promise.all(p2Photos.map(loadImg)),
       ]);
     } catch (e) {
       console.error("Failed to load images", e);
       return;
     }
 
-    // ── Draw each frame ─────────────────────────────────────────────────────
+    // ── Draw frames ───────────────────────────────────────────────────────────
     for (let i = 0; i < TOTAL_PHOTOS; i++) {
       const frameX = px;
       const frameY = headerH + padding + i * (frameH + gap);
 
-      // Dark frame border (slightly raised from background)
       ctx.fillStyle = "#080402";
       ctx.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6);
 
-      // Booth-backdrop fill behind photos
-      ctx.fillStyle = BOOTH_BACKDROP;
-      ctx.fillRect(frameX, frameY, frameW, frameH);
-
-      // P1 — left half, cover-cropped
+      // P1 — left half
       if (p1Imgs[i]) {
         ctx.save();
         ctx.beginPath();
@@ -267,7 +210,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
         ctx.restore();
       }
 
-      // P2 — right half, cover-cropped
+      // P2 — right half
       if (p2Imgs[i]) {
         ctx.save();
         ctx.beginPath();
@@ -277,7 +220,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
         ctx.restore();
       }
 
-      // Hairline seam — subtle white line at center join
+      // Hairline center seam
       ctx.strokeStyle = "rgba(255,255,255,0.18)";
       ctx.lineWidth = 0.5;
       ctx.beginPath();
@@ -285,7 +228,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.lineTo(frameX + halfW, frameY + frameH);
       ctx.stroke();
 
-      // Unified vignette across the full frame
+      // Unified vignette
       const vig = ctx.createRadialGradient(
         frameX + frameW / 2, frameY + frameH / 2, frameH * 0.15,
         frameX + frameW / 2, frameY + frameH / 2, frameH * 0.92
@@ -295,7 +238,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.fillStyle = vig;
       ctx.fillRect(frameX, frameY, frameW, frameH);
 
-      // Frame number badge (top-left, in margin)
+      // Frame number badge
       ctx.fillStyle = "rgba(0,0,0,0.60)";
       roundRect(ctx, frameX + 5, frameY + 5, 20, 14, 2); ctx.fill();
       ctx.fillStyle = "#C9A84C";
@@ -305,7 +248,7 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
       ctx.fillText(`${i + 1}`, frameX + 10, frameY + 12);
     }
 
-    // ── Footer ───────────────────────────────────────────────────────────────
+    // ── Footer ────────────────────────────────────────────────────────────────
     ctx.strokeStyle = "rgba(201,168,76,0.12)";
     ctx.lineWidth = 0.5;
     ctx.beginPath();
@@ -336,55 +279,13 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
     link.download = filename;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
-  }, [p1Ready, p2Ready, p1Photos, p2Photos]);
+  }, [p1Photos, p2Photos]);
 
-  // ── Processing screen ──────────────────────────────────────────────────────
-  if (processing) {
-    return (
-      <div className="flex flex-col items-center gap-5 py-10 w-full">
-        {/* Animated film strip spinner */}
-        <div className="relative w-16 h-16">
-          <div className="absolute inset-0 rounded-full border-4 border-dark-brown/10" />
-          <div className="absolute inset-0 rounded-full border-4 border-burnt-orange border-t-transparent animate-spin" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-serif text-lg font-bold text-burnt-orange">{progress}<span className="text-xs">%</span></span>
-          </div>
-        </div>
-        <div className="text-center">
-          <p className="font-serif text-dark-brown font-semibold text-base">
-            Placing you in the same booth…
-          </p>
-          <p className="font-sans text-xs text-warm-brown/45 mt-1 max-w-[200px] leading-relaxed">
-            Removing backgrounds &amp; compositing your portraits
-          </p>
-        </div>
-        {/* Mini progress bar */}
-        <div className="w-40 h-1 bg-dark-brown/10 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-burnt-orange rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // ── Photos to show (processed or raw fallback) ────────────────────────────
-  const displayP1 = p1Ready.length === TOTAL_PHOTOS ? p1Ready : p1Photos;
-  const displayP2 = p2Ready.length === TOTAL_PHOTOS ? p2Ready : p2Photos;
-  const frameCount = Math.min(displayP1.length, displayP2.length, TOTAL_PHOTOS);
-
-  // ── Strip ─────────────────────────────────────────────────────────────────
+  // ── Strip ──────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col items-center gap-4 w-full">
 
-      {segFailed && (
-        <p className="font-sans text-[10px] text-warm-brown/40 text-center">
-          Background removal unavailable — showing original photos
-        </p>
-      )}
-
-      {/* ── Film strip ────────────────────────────────────────────────────── */}
+      {/* ── Film strip ──────────────────────────────────────────────────────── */}
       <div
         className="relative shadow-2xl overflow-hidden"
         style={{
@@ -419,16 +320,15 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
               <div
                 key={i}
                 className="relative flex overflow-hidden border border-gold/8"
-                style={{ aspectRatio: "2/1", background: BOOTH_BACKDROP }}
+                style={{ aspectRatio: "2/1" }}
               >
                 {/* P1 — left half */}
                 <div className="w-1/2 h-full overflow-hidden relative shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={displayP1[i]}
+                    src={p1Photos[i]}
                     alt={`Person 1 shot ${i + 1}`}
                     className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: "grayscale(100%) contrast(1.1) brightness(0.95)" }}
                   />
                 </div>
 
@@ -442,10 +342,9 @@ export default function DuetStrip({ p1Photos, p2Photos }: DuetStripProps) {
                 <div className="w-1/2 h-full overflow-hidden relative shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={displayP2[i]}
+                    src={p2Photos[i]}
                     alt={`Person 2 shot ${i + 1}`}
                     className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: "grayscale(100%) contrast(1.1) brightness(0.95)" }}
                   />
                 </div>
 

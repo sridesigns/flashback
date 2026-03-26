@@ -4,23 +4,45 @@
 
 // ─── Film processing ──────────────────────────────────────────────────────────
 
-/** B&W + contrast boost + warm sepia tint + radial vignette */
+/** B&W + strong S-curve contrast + film grain + warm sepia tint + heavy vignette */
 function applyFilmLook(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const imageData = ctx.getImageData(0, 0, w, h);
   const data = imageData.data;
+
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2];
+
+    // BT.709 luminance
     let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    lum = Math.min(255, Math.max(0, (lum - 128) * 1.2 + 128));
-    data[i]     = Math.min(255, lum * 1.02); // warm tint
-    data[i + 1] = Math.min(255, lum * 0.98);
-    data[i + 2] = Math.min(255, lum * 0.92);
+
+    // Strong S-curve: crush shadows, open midtones, gentle highlights
+    let t = lum / 255;
+    if (t < 0.35) {
+      t = t * 0.55;                              // 0→0, 0.35→0.1925
+    } else if (t < 0.65) {
+      t = 0.1925 + (t - 0.35) * 2.1;            // 0.35→0.1925, 0.65→0.8225
+    } else {
+      t = 0.8225 + (t - 0.65) * 0.514;          // 0.65→0.8225, 1.0→1.002 ≈ 1.0
+    }
+    lum = Math.min(255, Math.max(0, t * 255));
+
+    // Per-pixel film grain
+    const grain = (Math.random() - 0.5) * 28;
+    lum = Math.min(255, Math.max(0, lum + grain));
+
+    // Warm amber sepia toning
+    data[i]     = Math.min(255, lum * 1.12);  // warm red
+    data[i + 1] = Math.min(255, lum * 0.97);  // slight green cut
+    data[i + 2] = Math.min(255, lum * 0.78);  // strong blue cut — amber shadows
   }
+
   ctx.putImageData(imageData, 0, 0);
 
-  const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.85);
+  // Heavy corner vignette — deep and tight
+  const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.12, w / 2, h / 2, h * 0.80);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.45)");
+  vignette.addColorStop(0.5, "rgba(0,0,0,0.08)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.72)");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, w, h);
 }

@@ -486,8 +486,6 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                       style={{
                         opacity: 0.65,
                         filter: "grayscale(100%) contrast(1.1)",
-                        /* un-mirror: ghost was captured mirrored, display straight */
-                        transform: "scaleX(-1)",
                       }}
                     />
                     {/* Subtle gold fade on the right edge of the ghost */}

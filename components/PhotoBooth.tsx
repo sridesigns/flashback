@@ -2,6 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import PhotoStrip, { PhotoStripHandle } from "./PhotoStrip";
+import { captureFromVideo, compressForUrl } from "@/lib/photoUtils";
+import { uploadBlob } from "@/lib/blobStore";
 
 type BoothState = "idle" | "permission" | "preview" | "countdown" | "done";
 
@@ -39,6 +41,9 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   const [error,      setError]      = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [shareLink,  setShareLink]  = useState<string | null>(null);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [copied,     setCopied]     = useState(false);
 
   useEffect(() => {
     navigator.mediaDevices?.enumerateDevices()
@@ -91,40 +96,9 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   }, [facingMode, startCamera]);
 
   const capturePhoto = useCallback((): string | null => {
-    const video  = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return null;
-
-    const w = video.videoWidth || 640;
-    const h = video.videoHeight || 480;
-    canvas.width  = w;
-    canvas.height = h;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    if (facingMode === "user") { ctx.translate(w, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(video, 0, 0, w, h);
-
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      lum = Math.min(255, Math.max(0, (lum - 128) * 1.2 + 128));
-      data[i] = Math.min(255, lum * 1.02);
-      data[i + 1] = Math.min(255, lum * 0.98);
-      data[i + 2] = Math.min(255, lum * 0.92);
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.85);
-    vignette.addColorStop(0, "rgba(0,0,0,0)");
-    vignette.addColorStop(1, "rgba(0,0,0,0.45)");
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, w, h);
-
-    return canvas.toDataURL("image/jpeg", 0.88);
+    const video = videoRef.current;
+    if (!video) return null;
+    return captureFromVideo(video, facingMode);
   }, [facingMode]);
 
   // Countdown + capture sequence
@@ -166,12 +140,31 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, currentShot]);
 
+  // Auto-generate duet share link when shooting is done
+  useEffect(() => {
+    if (state !== "done" || photos.length !== TOTAL_PHOTOS || shareLink || linkLoading) return;
+    setLinkLoading(true);
+    Promise.all(photos.map(compressForUrl)).then(async compressed => {
+      const payload: { phase: "p1"; p1: string[] } = { phase: "p1", p1: compressed };
+      try {
+        const id = await uploadBlob(payload);
+        setShareLink(`${window.location.origin}/#duet=jb_${id}`);
+      } catch {
+        // share link is optional — fail silently
+      }
+      setLinkLoading(false);
+    });
+  }, [state, photos, shareLink, linkLoading]);
+
   const handleStart = () => setState("countdown");
 
   const handleRetake = useCallback(async () => {
     setPhotos([]);
     setCurrentShot(0);
     setCountdown(COUNTDOWN_SECONDS);
+    setShareLink(null);
+    setLinkLoading(false);
+    setCopied(false);
     await startCamera(facingMode);
   }, [facingMode, startCamera]);
 
@@ -228,6 +221,38 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   Home
                 </button>
               </div>
+            </div>
+
+            {/* Duet share link */}
+            <div className="border-t border-dark-brown/8 pt-5 flex flex-col gap-2">
+              <p className="font-sans text-xs font-semibold text-dark-brown">
+                Shoot a Duet Strip
+              </p>
+              <p className="font-sans text-[11px] text-warm-brown/55 leading-relaxed">
+                Share this link with a partner — they&apos;ll pose alongside your ghost and you&apos;ll both get a combined strip.
+              </p>
+              {linkLoading ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-3 h-3 border-2 border-burnt-orange border-t-transparent rounded-full animate-spin" />
+                  <span className="font-sans text-xs text-warm-brown/50">Generating link…</span>
+                </div>
+              ) : shareLink ? (
+                <>
+                  <div className="bg-parchment/60 border border-dark-brown/10 rounded-lg px-3 py-2 font-mono text-[10px] text-warm-brown break-all leading-relaxed mt-1">
+                    {shareLink}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try { await navigator.clipboard.writeText(shareLink); } catch { /* ignore */ }
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2500);
+                    }}
+                    className={`leather-btn ${copied ? "leather-btn-dark" : "leather-btn-secondary"} font-sans font-semibold text-sm py-3 px-6 rounded-xl w-full`}
+                  >
+                    {copied ? "✓ Copied!" : "Copy Duet Link"}
+                  </button>
+                </>
+              ) : null}
             </div>
 
             <p className="font-sans text-xs text-warm-brown/30 leading-relaxed">

@@ -173,7 +173,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoS
 
     ctx.fillStyle = "#C9A84C";
     ctx.font = `bold 22px Georgia, "Times New Roman", serif`;
-    ctx.fillText("FLASHBACK", W / 2, padding + 22);
+    ctx.fillText("CitoFoto", W / 2, padding + 22);
 
     ctx.fillStyle = "#7a5535";
     ctx.font = `600 10px Arial, sans-serif`;

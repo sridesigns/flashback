@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start bg-cream">
-      {mode === "home"    && <LandingPage onRegular={() => setMode("regular")} onDuet={() => setMode("duet")} />}
+      {mode === "home"    && <LandingPage onOpen={() => setMode("regular")} />}
       {mode === "regular" && <PhotoBooth onHome={goHome} />}
       {mode === "duet"    && <DuetBooth  onHome={goHome} />}
     </main>
@@ -29,14 +29,14 @@ export default function Home() {
 
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 
-function LandingPage({ onRegular, onDuet }: { onRegular: () => void; onDuet: () => void }) {
+function LandingPage({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="w-full flex flex-col">
-      <SiteHeader onRegular={onRegular} />
-      <HeroSection onRegular={onRegular} onDuet={onDuet} />
+      <SiteHeader onOpen={onOpen} />
+      <HeroSection onOpen={onOpen} />
       <ManifestoSection />
       <HowItWorksSection />
-      <DuetFeatureSection onDuet={onDuet} />
+      <DuetFeatureSection onOpen={onOpen} />
       <SiteFooter />
     </div>
   );
@@ -44,7 +44,7 @@ function LandingPage({ onRegular, onDuet }: { onRegular: () => void; onDuet: () 
 
 // ─── Site Header ──────────────────────────────────────────────────────────────
 
-function SiteHeader({ onRegular }: { onRegular: () => void }) {
+function SiteHeader({ onOpen }: { onOpen: () => void }) {
   return (
     <header className="w-full sticky top-0 z-30 bg-cream/92 backdrop-blur-md border-b border-dark-brown/8">
       <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -53,7 +53,7 @@ function SiteHeader({ onRegular }: { onRegular: () => void }) {
           <span className="font-serif text-lg font-bold text-dark-brown tracking-tight">CitoFoto</span>
         </div>
         <button
-          onClick={onRegular}
+          onClick={onOpen}
           className="leather-btn leather-btn-primary font-sans font-semibold text-sm py-2.5 px-5 rounded-lg"
         >
           Open the Booth →
@@ -65,7 +65,7 @@ function SiteHeader({ onRegular }: { onRegular: () => void }) {
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 
-function HeroSection({ onRegular, onDuet }: { onRegular: () => void; onDuet: () => void }) {
+function HeroSection({ onOpen }: { onOpen: () => void }) {
   return (
     <section className="w-full max-w-4xl mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 flex flex-col items-center text-center">
 
@@ -85,21 +85,13 @@ function HeroSection({ onRegular, onDuet }: { onRegular: () => void; onDuet: () 
         No account, no cloud, nothing to install.
       </p>
 
-      {/* CTAs */}
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <button
-          onClick={onRegular}
-          className="leather-btn leather-btn-primary font-sans font-semibold text-base py-4 px-9 rounded-xl"
-        >
-          Open the Booth
-        </button>
-        <button
-          onClick={onDuet}
-          className="font-sans text-sm text-warm-brown hover:text-burnt-orange transition-colors duration-150 underline underline-offset-4 decoration-warm-brown/30 hover:decoration-burnt-orange/50"
-        >
-          Try Duet Mode →
-        </button>
-      </div>
+      {/* CTA */}
+      <button
+        onClick={onOpen}
+        className="leather-btn leather-btn-primary font-sans font-semibold text-base py-4 px-9 rounded-xl"
+      >
+        Open the Booth
+      </button>
 
       {/* Decorative scrolling film strip */}
       <FilmStripPreview />
@@ -216,7 +208,7 @@ function HowItWorksSection() {
 
 // ─── Duet Feature Section ─────────────────────────────────────────────────────
 
-function DuetFeatureSection({ onDuet }: { onDuet: () => void }) {
+function DuetFeatureSection({ onOpen }: { onOpen: () => void }) {
   return (
     <section className="w-full bg-parchment/40 border-y border-dark-brown/8 py-20 md:py-28 px-6">
       <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
@@ -231,14 +223,14 @@ function DuetFeatureSection({ onDuet }: { onDuet: () => void }) {
           <span className="text-gold italic">From anywhere.</span>
         </h2>
         <p className="font-sans text-base text-warm-brown/70 max-w-sm leading-relaxed">
-          You take your shots, share a link, your partner poses alongside your ghost —
-          one seamless strip, both of you, any distance.
+          Take your shots, then share the link you get with a partner. They pose alongside your ghost —
+          one seamless B&amp;W strip, both of you, any distance.
         </p>
         <button
-          onClick={onDuet}
+          onClick={onOpen}
           className="leather-btn leather-btn-dark font-sans font-semibold text-base py-4 px-9 rounded-xl mt-2"
         >
-          Try Duet Mode
+          Open the Booth
         </button>
       </div>
     </section>
