@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "next": "^16.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
