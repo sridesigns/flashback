@@ -67,11 +67,12 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
       </div>
 
       {/* ── Two-column hero — fills the viewport ── */}
-      <div className="flex-1 flex flex-col md:flex-row relative z-10">
+      <div className="flex-1 flex flex-col md:flex-row relative z-10"
+        style={{ padding: "0 clamp(16px, 5vw, 80px)" }}>
 
         {/* Left: illustration */}
         <div className="flex-1 flex items-center justify-center overflow-hidden"
-          style={{ padding: "40px 20px", minHeight: "40vh" }}>
+          style={{ minHeight: "40vh" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/illustration.png"
@@ -79,8 +80,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             className="illus-float w-auto object-contain select-none"
             style={{
               filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))",
-              maxHeight: "clamp(280px, 45vh, 680px)",
-              margin: "0 clamp(20px, 5vw, 80px)",
+              maxHeight: "clamp(320px, 70vh, 780px)",
             }}
             draggable={false}
           />
@@ -88,7 +88,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
         {/* Right: content */}
         <div className="flex-1 flex flex-col justify-center w-full"
-          style={{ padding: "32px 24px 40px", maxWidth: "none" }}>
+          style={{ padding: "32px 0 40px", maxWidth: "none" }}>
           <div style={{ maxWidth: "520px", margin: "0 auto", width: "100%" }}
             className="md:mx-0 flex flex-col gap-5 md:gap-6">
 
@@ -151,7 +151,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
       {/* ── Footer ── */}
       <footer
         className="w-full flex flex-wrap items-center justify-between gap-2 font-typewriter relative z-10"
-        style={{ padding: "16px 24px" }}
+        style={{ padding: "16px clamp(16px, 5vw, 80px)" }}
       >
         <p style={{ color: "#57534E", fontSize: "clamp(0.65rem, 1.5vw, 0.72rem)" }}>
           made with ❤️ by sriram venugopal
