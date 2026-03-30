@@ -76,7 +76,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             src="/illustration.png"
             alt="Film strip sketch illustration"
             className="illus-float max-h-[60vh] md:max-h-[80vh] w-auto object-contain select-none"
-            style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))" }}
+            style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))", transform: "rotate(15deg)" }}
             draggable={false}
           />
         </div>
@@ -94,13 +94,13 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
           {/* Headline */}
           <h1
-            className="font-typewriter leading-snug"
+            className="font-typewriter"
             style={{
               color: "#1C1917",
-              fontSize: "clamp(2rem, 3.5vw, 3rem)",
+              fontSize: "48px",
               fontWeight: "600",
               letterSpacing: "-0.01em",
-              lineHeight: "1.2",
+              lineHeight: "120%",
             }}
           >
             Four frames. One strip.<br />
@@ -110,8 +110,8 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
           {/* Body */}
           <p
-            className="font-typewriter leading-relaxed whitespace-nowrap"
-            style={{ color: "#57534E", fontSize: "clamp(0.9rem, 1.2vw, 1.05rem)" }}
+            className="font-typewriter whitespace-nowrap"
+            style={{ color: "#57534E", fontSize: "18px", lineHeight: "1.5" }}
           >
             A retro booth that lives in your browser — No cloud. No account.
           </p>
@@ -125,11 +125,12 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
               color: "#FAFAF9",
               border: "none",
               padding: "15px 28px",
-              fontSize: "clamp(0.88rem, 1.1vw, 1rem)",
+              fontSize: "24px",
+              lineHeight: "140%",
               fontFamily: "inherit",
               borderRadius: "6px",
               cursor: "pointer",
-              maxWidth: "380px",
+              maxWidth: "420px",
               width: "100%",
               letterSpacing: "0.01em",
             }}
@@ -144,7 +145,6 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         className="w-full flex items-center justify-between font-typewriter relative z-10"
         style={{
           padding: "18px 32px",
-          borderTop: "1px solid rgba(28,25,23,0.08)",
         }}
       >
         <p style={{ color: "#57534E", fontSize: "0.72rem" }}>

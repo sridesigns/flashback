@@ -80,8 +80,8 @@ body {
 
 /* Floating illustration */
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(-1deg); }
-  50%       { transform: translateY(-12px) rotate(-1deg); }
+  0%, 100% { transform: rotate(15deg) translateY(0px); }
+  50%       { transform: rotate(15deg) translateY(-12px); }
 }
 .illus-float {
   animation: float 6s ease-in-out infinite;
