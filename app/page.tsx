@@ -67,93 +67,99 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
       </div>
 
       {/* ── Two-column hero — fills the viewport ── */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10">
+      <div className="flex-1 flex flex-col md:flex-row relative z-10">
 
         {/* Left: illustration */}
-        <div className="flex-1 flex items-center justify-center p-8 md:p-12 md:py-16">
+        <div className="flex-1 flex items-center justify-center overflow-hidden"
+          style={{ padding: "40px 20px", minHeight: "40vh" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/illustration.png"
             alt="Film strip sketch illustration"
-            className="illus-float max-h-[60vh] md:max-h-[80vh] w-auto object-contain select-none"
-            style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))", transform: "rotate(15deg)" }}
+            className="illus-float w-auto object-contain select-none"
+            style={{
+              filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))",
+              maxHeight: "clamp(280px, 45vh, 680px)",
+              margin: "0 clamp(20px, 5vw, 80px)",
+            }}
             draggable={false}
           />
         </div>
 
         {/* Right: content */}
-        <div className="flex-1 flex flex-col justify-center px-8 md:px-14 lg:px-20 pb-12 md:pb-0 gap-7 max-w-xl md:max-w-none mx-auto md:mx-0 w-full">
+        <div className="flex-1 flex flex-col justify-center w-full"
+          style={{ padding: "32px 24px 40px", maxWidth: "none" }}>
+          <div style={{ maxWidth: "520px", margin: "0 auto", width: "100%" }}
+            className="md:mx-0 flex flex-col gap-5 md:gap-6">
 
-          {/* Brand */}
-          <p
-            className="font-typewriter tracking-widest"
-            style={{ color: "#57534E", fontSize: "0.78rem", letterSpacing: "0.12em" }}
-          >
-            cito-foto
-          </p>
+            {/* Brand */}
+            <p
+              className="font-typewriter"
+              style={{ color: "#57534E", fontSize: "clamp(0.7rem, 1.5vw, 0.78rem)", letterSpacing: "0.12em" }}
+            >
+              cito-foto
+            </p>
 
-          {/* Headline */}
-          <h1
-            className="font-typewriter"
-            style={{
-              color: "#1C1917",
-              fontSize: "48px",
-              fontWeight: "600",
-              letterSpacing: "-0.01em",
-              lineHeight: "120%",
-            }}
-          >
-            Four frames. One strip.<br />
-            Infinite reasons to<br />
-            squeeze in closer.
-          </h1>
+            {/* Headline */}
+            <h1
+              className="font-typewriter"
+              style={{
+                color: "#1C1917",
+                fontSize: "clamp(28px, 4.5vw, 48px)",
+                fontWeight: "600",
+                letterSpacing: "-0.01em",
+                lineHeight: "120%",
+              }}
+            >
+              Four frames. One strip.<br />
+              Infinite reasons to<br />
+              squeeze in closer.
+            </h1>
 
-          {/* Body */}
-          <p
-            className="font-typewriter whitespace-nowrap"
-            style={{ color: "#57534E", fontSize: "18px", lineHeight: "1.5" }}
-          >
-            A retro booth that lives in your browser — No cloud. No account.
-          </p>
+            {/* Body */}
+            <p
+              className="font-typewriter"
+              style={{ color: "#57534E", fontSize: "clamp(14px, 1.8vw, 18px)", lineHeight: "1.5" }}
+            >
+              A retro booth that lives in your browser — No cloud. No account.
+            </p>
 
-          {/* CTA */}
-          <button
-            onClick={onOpen}
-            className="font-typewriter transition-opacity hover:opacity-80 active:opacity-60"
-            style={{
-              background: "#1C1917",
-              color: "#FAFAF9",
-              border: "none",
-              padding: "15px 28px",
-              fontSize: "24px",
-              lineHeight: "140%",
-              fontFamily: "inherit",
-              borderRadius: "6px",
-              cursor: "pointer",
-              maxWidth: "420px",
-              width: "100%",
-              letterSpacing: "0.01em",
-            }}
-          >
-            Step in to create memories
-          </button>
+            {/* CTA */}
+            <button
+              onClick={onOpen}
+              className="font-typewriter transition-opacity hover:opacity-80 active:opacity-60"
+              style={{
+                background: "#1C1917",
+                color: "#FAFAF9",
+                border: "none",
+                padding: "clamp(12px, 1.5vw, 15px) 28px",
+                fontSize: "clamp(16px, 2.2vw, 24px)",
+                lineHeight: "140%",
+                fontFamily: "inherit",
+                borderRadius: "6px",
+                cursor: "pointer",
+                width: "100%",
+                letterSpacing: "0.01em",
+              }}
+            >
+              Step in to create memories
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ── Footer ── */}
       <footer
-        className="w-full flex items-center justify-between font-typewriter relative z-10"
-        style={{
-          padding: "18px 32px",
-        }}
+        className="w-full flex flex-wrap items-center justify-between gap-2 font-typewriter relative z-10"
+        style={{ padding: "16px 24px" }}
       >
-        <p style={{ color: "#57534E", fontSize: "0.72rem" }}>
+        <p style={{ color: "#57534E", fontSize: "clamp(0.65rem, 1.5vw, 0.72rem)" }}>
           made with ❤️ by sriram venugopal
         </p>
         <button
           style={{
             color: "#57534E",
-            fontSize: "0.72rem",
+            fontSize: "clamp(0.65rem, 1.5vw, 0.72rem)",
             background: "none",
             border: "none",
             cursor: "pointer",
