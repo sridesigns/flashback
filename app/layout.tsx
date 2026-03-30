@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Special_Elite } from "next/font/google";
+import { Fraunces, Inter, Zilla_Slab } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -17,11 +17,12 @@ const inter = Inter({
   weight: ["400", "500", "600"],
 });
 
-const specialElite = Special_Elite({
+const zillaSlab = Zilla_Slab({
   subsets: ["latin"],
   variable: "--font-typewriter",
   display: "swap",
-  weight: "400",
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -49,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${specialElite.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${zillaSlab.variable}`}>
       <body>{children}</body>
     </html>
   );

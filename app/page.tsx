@@ -32,11 +32,42 @@ export default function Home() {
 function LandingPage({ onOpen }: { onOpen: () => void }) {
   return (
     <div
-      className="w-full min-h-screen flex flex-col font-typewriter"
+      className="w-full min-h-screen flex flex-col font-typewriter relative overflow-hidden"
       style={{ background: "#FAFAF9" }}
     >
+
+      {/* ── Texture layer 1: paper grain (animated drift) ── */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <svg
+          className="grain-layer absolute w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-[0.038]"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <filter id="paper">
+            <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0.15" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#paper)" />
+        </svg>
+
+        {/* Texture layer 2: very faint horizontal rules — old typewriter paper */}
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #1C1917 28px, #1C1917 29px)",
+          }}
+        />
+
+        {/* Texture layer 3: warm edge vignette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse 90% 85% at 50% 50%, transparent 40%, rgba(28,25,23,0.055) 100%)",
+          }}
+        />
+      </div>
+
       {/* ── Two-column hero — fills the viewport ── */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10">
 
         {/* Left: illustration */}
         <div className="flex-1 flex items-center justify-center p-8 md:p-12 md:py-16">
@@ -44,8 +75,8 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
           <img
             src="/illustration.png"
             alt="Film strip sketch illustration"
-            className="max-h-[60vh] md:max-h-[80vh] w-auto object-contain select-none"
-            style={{ filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.10))" }}
+            className="illus-float max-h-[60vh] md:max-h-[80vh] w-auto object-contain select-none"
+            style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,0.13))" }}
             draggable={false}
           />
         </div>
@@ -111,7 +142,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
       {/* ── Footer ── */}
       <footer
-        className="w-full flex items-center justify-between font-typewriter"
+        className="w-full flex items-center justify-between font-typewriter relative z-10"
         style={{
           padding: "18px 32px",
           borderTop: "1px solid rgba(28,25,23,0.08)",

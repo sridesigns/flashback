@@ -76,6 +76,36 @@ body {
   border-radius: 3px;
 }
 
+/* ─── Editorial landing page textures ──────────────────────────────────────── */
+
+/* Floating illustration */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-12px) rotate(-1deg); }
+}
+.illus-float {
+  animation: float 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Slow drifting grain (film-like) */
+@keyframes grain-drift {
+  0%  { transform: translate(0,    0);    }
+  10% { transform: translate(-2px, -1px); }
+  20% { transform: translate(2px,  1px);  }
+  30% { transform: translate(-1px, 2px);  }
+  40% { transform: translate(1px,  -2px); }
+  50% { transform: translate(-2px, 1px);  }
+  60% { transform: translate(2px,  -1px); }
+  70% { transform: translate(-1px, -2px); }
+  80% { transform: translate(1px,  2px);  }
+  90% { transform: translate(-2px, 2px);  }
+  100%{ transform: translate(0,    0);    }
+}
+.grain-layer {
+  animation: grain-drift 0.9s steps(1) infinite;
+}
+
 /* Smooth transitions */
 .page-transition {
   animation: fadeIn 0.4s ease-out;
