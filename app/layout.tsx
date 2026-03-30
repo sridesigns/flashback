@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Special_Elite } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -15,6 +15,13 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
   weight: ["400", "500", "600"],
+});
+
+const specialElite = Special_Elite({
+  subsets: ["latin"],
+  variable: "--font-typewriter",
+  display: "swap",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -42,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${specialElite.variable}`}>
       <body>{children}</body>
     </html>
   );

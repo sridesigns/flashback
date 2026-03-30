@@ -31,243 +31,108 @@ export default function Home() {
 
 function LandingPage({ onOpen }: { onOpen: () => void }) {
   return (
-    <div className="w-full flex flex-col">
-      <SiteHeader onOpen={onOpen} />
-      <HeroSection onOpen={onOpen} />
-      <ManifestoSection />
-      <HowItWorksSection />
-      <DuetFeatureSection onOpen={onOpen} />
-      <SiteFooter />
-    </div>
-  );
-}
+    <div
+      className="w-full min-h-screen flex flex-col font-typewriter"
+      style={{ background: "#FAFAF9" }}
+    >
+      {/* ── Two-column hero — fills the viewport ── */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
 
-// ─── Site Header ──────────────────────────────────────────────────────────────
-
-function SiteHeader({ onOpen }: { onOpen: () => void }) {
-  return (
-    <header className="w-full sticky top-0 z-30 bg-cream/92 backdrop-blur-md border-b border-dark-brown/8">
-      <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <FilmFrameIcon />
-          <span className="font-serif text-lg font-bold text-dark-brown tracking-tight">CitoFoto</span>
+        {/* Left: illustration */}
+        <div className="flex-1 flex items-center justify-center p-8 md:p-12 md:py-16">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/illustration.png"
+            alt="Film strip sketch illustration"
+            className="max-h-[60vh] md:max-h-[80vh] w-auto object-contain select-none"
+            style={{ filter: "drop-shadow(0 12px 40px rgba(0,0,0,0.10))" }}
+            draggable={false}
+          />
         </div>
-        <button
-          onClick={onOpen}
-          className="leather-btn leather-btn-primary font-sans font-semibold text-sm py-2.5 px-5 rounded-lg"
-        >
-          Open the Booth →
-        </button>
-      </div>
-    </header>
-  );
-}
 
-// ─── Hero Section ─────────────────────────────────────────────────────────────
+        {/* Right: content */}
+        <div className="flex-1 flex flex-col justify-center px-8 md:px-14 lg:px-20 pb-12 md:pb-0 gap-7 max-w-xl md:max-w-none mx-auto md:mx-0 w-full">
 
-function HeroSection({ onOpen }: { onOpen: () => void }) {
-  return (
-    <section className="w-full max-w-4xl mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 flex flex-col items-center text-center">
-
-      {/* Headline — large, tight, editorial */}
-      <h1
-        className="font-serif font-bold text-dark-brown leading-[1.06] mb-7"
-        style={{ fontSize: "clamp(2.8rem, 9vw, 5.5rem)", letterSpacing: "-0.025em" }}
-      >
-        Four poses.<br />
-        One strip.<br />
-        <span className="text-burnt-orange italic">Yours forever.</span>
-      </h1>
-
-      {/* Sub-copy */}
-      <p className="font-sans text-base md:text-lg text-warm-brown/70 max-w-sm leading-relaxed mb-10">
-        A retro photo booth that lives in your browser.
-        No account, no cloud, nothing to install.
-      </p>
-
-      {/* CTA */}
-      <button
-        onClick={onOpen}
-        className="leather-btn leather-btn-primary font-sans font-semibold text-base py-4 px-9 rounded-xl"
-      >
-        Open the Booth
-      </button>
-
-      {/* Decorative scrolling film strip */}
-      <FilmStripPreview />
-    </section>
-  );
-}
-
-function FilmStripPreview() {
-  return (
-    <div className="relative w-full max-w-sm mt-14 overflow-hidden opacity-60" style={{ height: "72px" }}>
-      <div
-        className="flex gap-2.5 items-center absolute"
-        style={{ animation: "slideFilm 14s linear infinite", width: "220%" }}
-      >
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="shrink-0 rounded border border-dark-brown/15 bg-parchment/80 flex items-center justify-center"
-            style={{ width: "52px", height: "60px" }}
+          {/* Brand */}
+          <p
+            className="font-typewriter tracking-widest"
+            style={{ color: "#57534E", fontSize: "0.78rem", letterSpacing: "0.12em" }}
           >
-            <div className="w-3.5 h-3.5 rounded-full border border-dark-brown/15" />
-          </div>
-        ))}
-      </div>
-      <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-cream to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-cream to-transparent z-10 pointer-events-none" />
-      <style>{`
-        @keyframes slideFilm {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Manifesto Section ────────────────────────────────────────────────────────
-
-function ManifestoSection() {
-  return (
-    <section className="w-full bg-dark-brown py-20 md:py-28 px-6">
-      <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
-        <p
-          className="font-serif font-medium text-cream leading-relaxed"
-          style={{ fontSize: "clamp(1.4rem, 4vw, 2.2rem)", letterSpacing: "-0.01em" }}
-        >
-          "Open. Pose. Download.<br className="hidden sm:block" /> That&apos;s it."
-        </p>
-        <p className="font-sans text-sm text-cream/45 leading-relaxed max-w-xs">
-          We don&apos;t store your photos. We don&apos;t need your email.
-          Just a beautiful moment — and a film strip to prove it happened.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-// ─── How It Works ─────────────────────────────────────────────────────────────
-
-function HowItWorksSection() {
-  const steps = [
-    {
-      n: "01",
-      title: "Open the booth",
-      body: "No download, no sign-up. Allow camera access and you're ready in seconds.",
-    },
-    {
-      n: "02",
-      title: "Strike four poses",
-      body: "Three-second countdown, four times. Silly, sincere, or somewhere in between.",
-    },
-    {
-      n: "03",
-      title: "Download your strip",
-      body: "Black-and-white, classic, instantly. No watermarks, no waiting, no cloud.",
-    },
-  ];
-
-  return (
-    <section className="w-full py-20 md:py-28 px-6">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-16">
-          <p className="font-sans text-xs text-burnt-orange uppercase tracking-[0.2em] font-semibold mb-3">
-            How it works
+            cito-foto
           </p>
-          <h2
-            className="font-serif font-bold text-dark-brown"
-            style={{ fontSize: "clamp(1.8rem, 5vw, 2.8rem)", letterSpacing: "-0.02em" }}
-          >
-            Simple by design.
-          </h2>
-        </div>
 
-        <div className="flex flex-col gap-14">
-          {steps.map((step) => (
-            <div key={step.n} className="flex gap-8 items-start">
-              <span
-                className="font-serif font-bold text-warm-brown/10 leading-none shrink-0 select-none"
-                style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}
-              >
-                {step.n}
-              </span>
-              <div className="pt-2">
-                <h3 className="font-serif text-xl font-bold text-dark-brown mb-2 leading-tight">{step.title}</h3>
-                <p className="font-sans text-base text-warm-brown/65 leading-relaxed">{step.body}</p>
-              </div>
-            </div>
-          ))}
+          {/* Headline */}
+          <h1
+            className="font-typewriter leading-snug"
+            style={{
+              color: "#1C1917",
+              fontSize: "clamp(1.85rem, 3.2vw, 2.75rem)",
+              fontWeight: "700",
+              letterSpacing: "-0.01em",
+              lineHeight: "1.2",
+            }}
+          >
+            Four frames. One strip.<br />
+            Infinite reasons to<br />
+            squeeze in closer.
+          </h1>
+
+          {/* Body */}
+          <p
+            className="font-typewriter leading-relaxed"
+            style={{ color: "#57534E", fontSize: "clamp(0.9rem, 1.2vw, 1.05rem)", maxWidth: "380px" }}
+          >
+            A retro booth that lives in your browser —<br />
+            No cloud. No account.
+          </p>
+
+          {/* CTA */}
+          <button
+            onClick={onOpen}
+            className="font-typewriter transition-opacity hover:opacity-80 active:opacity-60"
+            style={{
+              background: "#1C1917",
+              color: "#FAFAF9",
+              border: "none",
+              padding: "15px 28px",
+              fontSize: "clamp(0.88rem, 1.1vw, 1rem)",
+              fontFamily: "inherit",
+              borderRadius: "6px",
+              cursor: "pointer",
+              maxWidth: "380px",
+              width: "100%",
+              letterSpacing: "0.01em",
+            }}
+          >
+            Step in to create memories
+          </button>
         </div>
       </div>
-    </section>
-  );
-}
 
-// ─── Duet Feature Section ─────────────────────────────────────────────────────
-
-function DuetFeatureSection({ onOpen }: { onOpen: () => void }) {
-  return (
-    <section className="w-full bg-parchment/40 border-y border-dark-brown/8 py-20 md:py-28 px-6">
-      <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-6">
-        <p className="font-sans text-xs text-gold uppercase tracking-[0.2em] font-semibold">
-          Pose & Pass
-        </p>
-        <h2
-          className="font-serif font-bold text-dark-brown leading-tight"
-          style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)", letterSpacing: "-0.02em" }}
-        >
-          Pose together.<br />
-          <span className="text-gold italic">From anywhere.</span>
-        </h2>
-        <p className="font-sans text-base text-warm-brown/70 max-w-sm leading-relaxed">
-          Take your shots, share the link with a partner. They pose alongside your ghost —
-          one seamless B&amp;W strip, both of you, from anywhere.
+      {/* ── Footer ── */}
+      <footer
+        className="w-full flex items-center justify-between font-typewriter"
+        style={{
+          padding: "18px 32px",
+          borderTop: "1px solid rgba(28,25,23,0.08)",
+        }}
+      >
+        <p style={{ color: "#57534E", fontSize: "0.72rem" }}>
+          made with ❤️ by sriram venugopal
         </p>
         <button
-          onClick={onOpen}
-          className="leather-btn leather-btn-dark font-sans font-semibold text-base py-4 px-9 rounded-xl mt-2"
+          style={{
+            color: "#57534E",
+            fontSize: "0.72rem",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
         >
-          Open the Booth
+          Got feedback? Reach out
         </button>
-      </div>
-    </section>
-  );
-}
-
-// ─── Site Footer ──────────────────────────────────────────────────────────────
-
-function SiteFooter() {
-  return (
-    <footer className="w-full py-10 px-6 border-t border-dark-brown/8">
-      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <FilmFrameIcon className="text-dark-brown/30" />
-          <span className="font-serif text-sm font-bold text-dark-brown/40">CitoFoto</span>
-        </div>
-        <p className="font-sans text-xs text-dark-brown/30">
-          A photo booth for the internet. Made with ♥
-        </p>
-        <div className="flex gap-1.5 opacity-20">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="w-2.5 h-1.5 rounded-sm border border-dark-brown/60" />
-          ))}
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function FilmFrameIcon({ className = "text-burnt-orange" }: { className?: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path strokeLinecap="round" d="M7 4v16M17 4v16" />
-      <path strokeLinecap="round" d="M2 8h5M17 8h5M2 12h5M17 12h5M2 16h5M17 16h5" />
-    </svg>
+      </footer>
+    </div>
   );
 }
