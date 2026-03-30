@@ -97,8 +97,8 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             className="font-typewriter leading-snug"
             style={{
               color: "#1C1917",
-              fontSize: "clamp(1.85rem, 3.2vw, 2.75rem)",
-              fontWeight: "700",
+              fontSize: "clamp(2rem, 3.5vw, 3rem)",
+              fontWeight: "600",
               letterSpacing: "-0.01em",
               lineHeight: "1.2",
             }}
@@ -110,11 +110,10 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
           {/* Body */}
           <p
-            className="font-typewriter leading-relaxed"
-            style={{ color: "#57534E", fontSize: "clamp(0.9rem, 1.2vw, 1.05rem)", maxWidth: "380px" }}
+            className="font-typewriter leading-relaxed whitespace-nowrap"
+            style={{ color: "#57534E", fontSize: "clamp(0.9rem, 1.2vw, 1.05rem)" }}
           >
-            A retro booth that lives in your browser —<br />
-            No cloud. No account.
+            A retro booth that lives in your browser — No cloud. No account.
           </p>
 
           {/* CTA */}
