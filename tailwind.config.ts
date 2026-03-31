@@ -22,6 +22,7 @@ const config: Config = {
         serif: ["var(--font-fraunces)", "Georgia", "serif"],
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         typewriter: ["var(--font-typewriter)", "American Typewriter", "Courier New", "monospace"],
+        handwritten: ["var(--font-caveat)", "cursive"],
       },
       keyframes: {
         flash: {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Zilla_Slab } from "next/font/google";
+import { Fraunces, Inter, Zilla_Slab, Caveat } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -23,6 +23,13 @@ const zillaSlab = Zilla_Slab({
   display: "swap",
   weight: ["300", "400", "500", "600", "700"],
   style: ["normal", "italic"],
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-caveat",
+  display: "swap",
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -50,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${zillaSlab.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${zillaSlab.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );

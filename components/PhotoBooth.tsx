@@ -178,7 +178,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   // ── Done screen (strip + actions) ────────────────────────────────────────
   if (state === "done" && photos.length === TOTAL_PHOTOS) {
     return (
-      <div className="w-full min-h-screen flex flex-col page-transition">
+      <div className="w-full min-h-screen flex flex-col page-transition booth-bg">
         <BoothHeader label="Regular Booth" onBack={handleHome} />
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
           {/* Strip */}
@@ -188,10 +188,10 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           {/* Actions */}
           <div className="flex flex-col gap-6 md:pt-4">
             <div>
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark-brown leading-tight" style={{ letterSpacing: "-0.02em" }}>
+              <h2 className="font-handwritten text-4xl font-semibold leading-tight" style={{ color: "#1C1917" }}>
                 Your strip<br />is ready.
               </h2>
-              <p className="font-sans text-sm text-warm-brown/65 mt-2 leading-relaxed">
+              <p className="font-typewriter text-sm mt-2 leading-relaxed" style={{ color: "rgba(28,25,23,0.5)" }}>
                 Four poses. One memory.
               </p>
             </div>
@@ -267,19 +267,28 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
   // ── Camera view (main layout) ─────────────────────────────────────────────
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="w-full min-h-screen flex flex-col booth-bg">
+      {/* Paper texture — same as landing page */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <svg className="grain-layer absolute w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-[0.032]" xmlns="http://www.w3.org/2000/svg">
+          <filter id="paper-booth"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0.15" /></filter>
+          <rect width="100%" height="100%" filter="url(#paper-booth)" />
+        </svg>
+        <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #1C1917 28px, #1C1917 29px)" }} />
+      </div>
+
       <BoothHeader label="Regular Booth" onBack={onHome} />
 
-      <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
-        <div className="flex flex-col md:grid md:grid-cols-[1fr_232px] md:gap-10 items-start gap-5">
+      <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 md:py-10 relative z-10">
+        <div className="flex flex-col md:grid md:grid-cols-[1fr_220px] md:gap-10 items-start gap-5">
 
           {/* ── Left: camera column ──────────────────────────────────────── */}
           <div className="w-full flex flex-col items-center gap-4">
 
-            {/* Camera viewport — always rendered, overlays handle states */}
+            {/* Camera viewport */}
             <div
-              className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl border-2 border-dark-brown/80 shadow-2xl bg-film-black"
-              style={{ aspectRatio: "3/4" }}
+              className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl bg-[#D9D5CF]"
+              style={{ aspectRatio: "3/4", border: "1.5px solid rgba(28,25,23,0.18)", boxShadow: "0 4px 24px rgba(28,25,23,0.10)" }}
             >
               {/* Permission loading */}
               {state === "permission" && (
@@ -332,107 +341,138 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               {/* Flash */}
               {showFlash && <div className="absolute inset-0 bg-white z-20 animate-flash pointer-events-none" />}
 
-              {/* Film corners */}
-              <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-gold/50 pointer-events-none" />
-              <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-gold/50 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-gold/50 pointer-events-none" />
-              <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-gold/50 pointer-events-none" />
+              {/* Corner marks — subtle editorial style */}
+              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[rgba(28,25,23,0.25)] pointer-events-none" />
+              <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[rgba(28,25,23,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[rgba(28,25,23,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[rgba(28,25,23,0.25)] pointer-events-none" />
             </div>
 
             {/* Thumbnail slots — fill as photos are captured */}
-            <div className="flex gap-3 justify-center w-full">
+            <div className="flex gap-2.5 justify-center w-full max-w-[320px]">
               {Array.from({ length: TOTAL_PHOTOS }).map((_, i) => (
                 <div
                   key={i}
-                  className={`relative overflow-hidden rounded-lg flex items-center justify-center transition-all duration-300 ${
-                    photos[i]
-                      ? "border-2 border-dark-brown/70 shadow-md"
-                      : "border-2 border-dashed border-dark-brown/25"
+                  className={`relative overflow-hidden rounded flex items-center justify-center transition-all duration-300 ${
+                    photos[i] ? "shadow-sm" : ""
                   }`}
-                  style={{ width: "22%", aspectRatio: "3/4" }}
+                  style={{
+                    width: "22%",
+                    aspectRatio: "3/4",
+                    border: photos[i]
+                      ? "1.5px solid rgba(28,25,23,0.4)"
+                      : "1.5px dashed rgba(28,25,23,0.18)",
+                    background: photos[i] ? "transparent" : "rgba(28,25,23,0.02)",
+                  }}
                 >
                   {photos[i] ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photos[i]}
-                        alt={`Shot ${i + 1}`}
-                        className="absolute inset-0 w-full h-full object-cover bw-photo"
-                      />
-                      <span className="absolute top-0.5 left-0.5 bg-black/60 text-gold text-[7px] font-mono font-bold w-3 h-3 flex items-center justify-center rounded-sm z-10">
+                      <img src={photos[i]} alt={`Shot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover bw-photo" />
+                      <span className="absolute top-0.5 left-0.5 bg-[rgba(28,25,23,0.55)] text-[#FAFAF9] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
                         {i + 1}
                       </span>
                     </>
                   ) : (
-                    <span className="font-sans text-sm text-dark-brown/25 font-medium">{i + 1}</span>
+                    <span className="font-typewriter text-xs text-[rgba(28,25,23,0.2)]">{i + 1}</span>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Shutter button + controls */}
-            <div className="flex flex-col items-center gap-3">
+            {/* Shutter + controls row */}
+            <div className="flex items-center justify-center gap-5 w-full max-w-[320px]">
               {state === "preview" && (
-                <div className="flex items-center gap-4">
-                  {hasMultipleCameras && (
-                    <button onClick={flipCamera} title="Flip camera"
-                      className="leather-btn leather-btn-secondary font-sans text-sm p-3 rounded-full"
-                    >
-                      <FlipIcon />
-                    </button>
-                  )}
+                <>
+                  {/* Retake / flip */}
+                  <div className="flex items-center gap-3 flex-1 justify-end">
+                    {hasMultipleCameras && (
+                      <button onClick={flipCamera} title="Flip camera"
+                        className="font-typewriter text-xs text-[rgba(28,25,23,0.5)] hover:text-[rgba(28,25,23,0.8)] transition-colors flex items-center gap-1.5"
+                      >
+                        <FlipIcon /> Flip
+                      </button>
+                    )}
+                  </div>
+                  {/* Shutter */}
                   <button
                     onClick={handleStart}
-                    className="w-[72px] h-[72px] rounded-full border-[4px] border-dark-brown/70 flex items-center justify-center bg-cream hover:scale-105 active:scale-95 transition-transform shadow-lg"
+                    className="w-[64px] h-[64px] rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
+                    style={{ border: "3px solid rgba(28,25,23,0.75)", background: "transparent" }}
                     title="Start Shoot"
                   >
-                    <div className="w-[54px] h-[54px] rounded-full bg-dark-brown" />
+                    <div className="w-[48px] h-[48px] rounded-full bg-[#1C1917]" />
                   </button>
-                  {hasMultipleCameras ? (
-                    <div className="w-[44px]" /> /* spacer to center shutter */
-                  ) : null}
-                </div>
+                  <div className="flex-1" />
+                </>
               )}
               {state === "countdown" && (
-                <p className="text-center font-sans text-sm text-warm-brown/60 py-3">
+                <p className="text-center font-typewriter text-sm text-[rgba(28,25,23,0.45)] py-3">
                   Pose {currentShot + 1} of {TOTAL_PHOTOS} — get ready…
                 </p>
               )}
-              {(state === "permission" || state === "idle") && (
-                <div className="h-12" /> /* placeholder to avoid layout jump */
-              )}
+              {(state === "permission" || state === "idle") && <div className="h-16" />}
             </div>
 
             {/* Mobile-only info strip */}
-            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2 border-t border-dark-brown/8">
+            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2" style={{ borderTop: "1px solid rgba(28,25,23,0.08)" }}>
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat} className="text-center">
-                  <p className="font-serif text-sm font-bold text-dark-brown">{item.stat}</p>
-                  <p className="font-sans text-[10px] text-warm-brown/50 leading-tight mt-0.5">{item.detail}</p>
+                  <p className="font-handwritten text-base font-semibold text-[#1C1917]">{item.stat}</p>
+                  <p className="font-typewriter text-[10px] text-[rgba(28,25,23,0.45)] leading-tight mt-0.5">{item.detail}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* ── Right: info sidebar (desktop only) ───────────────────────── */}
-          <aside className="hidden md:flex flex-col gap-8 pt-9">
-            <div className="flex flex-col gap-6">
-              <p className="font-sans text-[10px] text-burnt-orange uppercase tracking-[0.2em] font-semibold">
-                How it works
-              </p>
+          <aside className="hidden md:flex flex-col gap-7 pt-8 relative">
+
+            {/* Hand-drawn arrow pointing left toward the camera */}
+            <div className="absolute -left-14 top-1 pointer-events-none" aria-hidden="true">
+              <svg width="72" height="96" viewBox="0 0 72 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  className="draw-arrow-path"
+                  d="M62,6 C55,10 46,18 38,30 C28,46 18,62 10,78 C8,82 6,86 5,89"
+                  stroke="#1C1917"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  opacity="0.5"
+                />
+                <path
+                  className="draw-arrow-path"
+                  d="M2,83 C3,85 4,88 5,89 C7,89 10,90 13,90"
+                  stroke="#1C1917"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  opacity="0.5"
+                />
+              </svg>
+            </div>
+
+            {/* "How it works" — handwritten */}
+            <p className="font-handwritten text-2xl text-[#1C1917]" style={{ lineHeight: "1.1" }}>
+              How it works
+            </p>
+
+            <div className="flex flex-col gap-5">
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat}>
-                  <p className="font-serif text-2xl font-bold text-dark-brown leading-none" style={{ letterSpacing: "-0.02em" }}>
+                  <p className="font-handwritten text-3xl font-semibold text-[#1C1917] leading-none">
                     {item.stat}
                   </p>
-                  <p className="font-sans text-xs text-warm-brown/55 mt-1 leading-relaxed">{item.detail}</p>
+                  <p className="font-typewriter text-xs text-[rgba(28,25,23,0.45)] mt-1 leading-relaxed">{item.detail}</p>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-dark-brown/8 pt-6 flex flex-col gap-2">
-              <p className="font-sans text-xs text-warm-brown/35 leading-relaxed">
-                Photos never leave your device. No account, no cloud.
+            <div className="flex flex-col gap-1.5 pt-4" style={{ borderTop: "1px solid rgba(28,25,23,0.08)" }}>
+              <p className="font-typewriter text-xs text-[rgba(28,25,23,0.3)] leading-relaxed">
+                Photos never leave your device.<br />No account, no cloud.
               </p>
             </div>
           </aside>
@@ -449,17 +489,18 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
 function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) {
   return (
-    <header className="w-full sticky top-0 z-20 bg-cream/92 backdrop-blur-md border-b border-dark-brown/8">
+    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(250,250,249,0.92)", borderBottom: "1px solid rgba(28,25,23,0.07)" }}>
       <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         <button
           onClick={onBack}
-          className="font-sans text-sm text-warm-brown/50 hover:text-warm-brown transition-colors flex items-center gap-1.5 shrink-0"
+          className="font-typewriter text-sm hover:opacity-60 transition-opacity flex items-center gap-1.5 shrink-0"
+          style={{ color: "rgba(28,25,23,0.5)" }}
         >
           ← Back
         </button>
         <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-          <span className="font-serif text-lg font-bold text-burnt-orange tracking-tight">CitoFoto</span>
-          <span className="font-sans text-[10px] text-warm-brown/40 uppercase tracking-[0.15em] hidden sm:block">
+          <span className="font-typewriter text-base font-semibold tracking-tight" style={{ color: "#1C1917" }}>CitoFoto</span>
+          <span className="font-typewriter text-[10px] uppercase tracking-[0.15em] hidden sm:block" style={{ color: "rgba(28,25,23,0.35)" }}>
             / {label}
           </span>
         </div>
