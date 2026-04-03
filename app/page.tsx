@@ -125,7 +125,9 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             {/* CTA */}
             <button
               onClick={onOpen}
-              className="font-typewriter transition-opacity hover:opacity-80 active:opacity-60"
+              className="font-typewriter transition-colors"
+          onMouseEnter={e => (e.currentTarget.style.background = "#111a13")}
+          onMouseLeave={e => (e.currentTarget.style.background = "#212E24")}
               style={{
                 background: "#212E24",
                 color: "#FAF6ED",
