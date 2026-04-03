@@ -126,7 +126,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             {/* CTA */}
             <button
               onClick={onOpen}
-              className="font-typewriter"
+              className="font-typewriter w-full sm:w-auto sm:self-start"
               onMouseEnter={e => {
                 e.currentTarget.style.background = "#005CFF";
                 e.currentTarget.style.color = "#FDFCF7";
@@ -146,7 +146,6 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                 borderRadius: "6px",
                 cursor: "pointer",
                 letterSpacing: "0.01em",
-                alignSelf: "flex-start",
                 transition: "background 0.22s ease, color 0.22s ease",
               }}
             >
