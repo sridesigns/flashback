@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, DM_Serif_Display, Caveat } from "next/font/google";
+import { Fraunces, DM_Mono, DM_Serif_Display, Caveat } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -10,11 +10,12 @@ const fraunces = Fraunces({
   style: ["normal", "italic"],
 });
 
-const inter = Inter({
+const dmMono = DM_Mono({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
-  weight: ["400", "500", "600"],
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
 const dmSerifDisplay = DM_Serif_Display({
@@ -57,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${dmSerifDisplay.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${dmMono.variable} ${dmSerifDisplay.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );
