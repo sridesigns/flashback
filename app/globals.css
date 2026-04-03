@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes cta-nudge {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  50%       { transform: translateX(3px) rotate(15deg); }
+}
+
 :root {
   --font-fraunces: "Fraunces", Georgia, serif;
   --font-inter: "Inter", system-ui, sans-serif;

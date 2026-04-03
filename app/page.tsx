@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Redo2 } from "lucide-react";
 import PhotoBooth from "@/components/PhotoBooth";
 import DuetBooth  from "@/components/DuetBooth";
 
@@ -149,7 +150,10 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                 transition: "background 0.22s ease, color 0.22s ease",
               }}
             >
-              Step in to create memories
+              <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                Step in to create memories
+                <Redo2 size={18} style={{ animation: "cta-nudge 2s ease-in-out infinite" }} />
+              </span>
             </button>
           </div>
         </div>
