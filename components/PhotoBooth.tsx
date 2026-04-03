@@ -186,7 +186,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             <filter id="paper-done"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0.15" /></filter>
             <rect width="100%" height="100%" filter="url(#paper-done)" />
           </svg>
-          <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)" }} />
+          <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #005CFF 28px, #005CFF 29px)" }} />
         </div>
         <BoothHeader label="Regular Booth" onBack={handleHome} />
         <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6 relative z-10">
@@ -197,10 +197,10 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           {/* Actions */}
           <div className="flex flex-col gap-6 md:pt-4">
             <div>
-              <h2 className="font-handwritten text-4xl font-semibold leading-tight" style={{ color: "#212E24" }}>
+              <h2 className="font-handwritten text-4xl font-semibold leading-tight" style={{ color: "#005CFF" }}>
                 Your strip<br />is ready.
               </h2>
-              <p className="font-typewriter text-sm mt-2 leading-relaxed" style={{ color: "rgba(33,46,36,0.5)" }}>
+              <p className="font-typewriter text-sm mt-2 leading-relaxed" style={{ color: "rgba(0,92,255,0.5)" }}>
                 Four poses. One memory.
               </p>
             </div>
@@ -233,21 +233,21 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* Duet share link */}
-            <div className="pt-5 flex flex-col gap-2" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
-              <p className="font-typewriter text-xs font-semibold" style={{ color: "#212E24" }}>
+            <div className="pt-5 flex flex-col gap-2" style={{ borderTop: "1px solid rgba(0,92,255,0.08)" }}>
+              <p className="font-typewriter text-xs font-semibold" style={{ color: "#005CFF" }}>
                 Start a Pose &amp; Pass
               </p>
-              <p className="font-typewriter text-[11px] leading-relaxed" style={{ color: "rgba(33,46,36,0.5)" }}>
+              <p className="font-typewriter text-[11px] leading-relaxed" style={{ color: "rgba(0,92,255,0.5)" }}>
                 Share this link with a partner — they&apos;ll pose alongside your ghost and you&apos;ll both get a combined strip.
               </p>
               {linkLoading ? (
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#212E24", borderTopColor: "transparent" }} />
-                  <span className="font-typewriter text-xs" style={{ color: "rgba(33,46,36,0.5)" }}>Generating link…</span>
+                  <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#005CFF", borderTopColor: "transparent" }} />
+                  <span className="font-typewriter text-xs" style={{ color: "rgba(0,92,255,0.5)" }}>Generating link…</span>
                 </div>
               ) : shareLink ? (
                 <>
-                  <div className="rounded-lg px-3 py-2 font-mono text-[10px] break-all leading-relaxed mt-1" style={{ background: "rgba(33,46,36,0.04)", border: "1px solid rgba(33,46,36,0.1)", color: "rgba(33,46,36,0.6)" }}>
+                  <div className="rounded-lg px-3 py-2 font-mono text-[10px] break-all leading-relaxed mt-1" style={{ background: "rgba(0,92,255,0.04)", border: "1px solid rgba(0,92,255,0.1)", color: "rgba(0,92,255,0.6)" }}>
                     {shareLink}
                   </div>
                   <button
@@ -264,7 +264,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               ) : null}
             </div>
 
-            <p className="font-typewriter text-xs leading-relaxed" style={{ color: "rgba(33,46,36,0.3)" }}>
+            <p className="font-typewriter text-xs leading-relaxed" style={{ color: "rgba(0,92,255,0.3)" }}>
               Your photos never leave your device.
             </p>
           </div>
@@ -283,7 +283,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           <filter id="paper-booth"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0.15" /></filter>
           <rect width="100%" height="100%" filter="url(#paper-booth)" />
         </svg>
-        <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)" }} />
+        <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #005CFF 28px, #005CFF 29px)" }} />
       </div>
 
       <BoothHeader label="Regular Booth" onBack={onHome} />
@@ -297,7 +297,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             {/* Camera viewport */}
             <div
               className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl bg-[#D9D5CF]"
-              style={{ aspectRatio: "3/4", border: "1.5px solid rgba(33,46,36,0.18)", boxShadow: "0 4px 24px rgba(33,46,36,0.10)" }}
+              style={{ aspectRatio: "3/4", border: "1.5px solid rgba(0,92,255,0.18)", boxShadow: "0 4px 24px rgba(0,92,255,0.10)" }}
             >
               {/* Permission loading */}
               {state === "permission" && (
@@ -351,10 +351,10 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               {showFlash && <div className="absolute inset-0 bg-white z-20 animate-flash pointer-events-none" />}
 
               {/* Corner marks — subtle editorial style */}
-              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[rgba(33,46,36,0.25)] pointer-events-none" />
-              <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[rgba(33,46,36,0.25)] pointer-events-none" />
-              <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[rgba(33,46,36,0.25)] pointer-events-none" />
-              <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[rgba(33,46,36,0.25)] pointer-events-none" />
+              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[rgba(0,92,255,0.25)] pointer-events-none" />
+              <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[rgba(0,92,255,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[rgba(0,92,255,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[rgba(0,92,255,0.25)] pointer-events-none" />
             </div>
 
             {/* Thumbnail slots — fill as photos are captured */}
@@ -369,21 +369,21 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                     width: "22%",
                     aspectRatio: "3/4",
                     border: photos[i]
-                      ? "1.5px solid rgba(33,46,36,0.4)"
-                      : "1.5px dashed rgba(33,46,36,0.18)",
-                    background: photos[i] ? "transparent" : "rgba(33,46,36,0.02)",
+                      ? "1.5px solid rgba(0,92,255,0.4)"
+                      : "1.5px dashed rgba(0,92,255,0.18)",
+                    background: photos[i] ? "transparent" : "rgba(0,92,255,0.02)",
                   }}
                 >
                   {photos[i] ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photos[i]} alt={`Shot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover bw-photo" />
-                      <span className="absolute top-0.5 left-0.5 bg-[rgba(33,46,36,0.55)] text-[#FDFCF7] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
+                      <span className="absolute top-0.5 left-0.5 bg-[rgba(0,92,255,0.55)] text-[#FDFCF7] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
                         {i + 1}
                       </span>
                     </>
                   ) : (
-                    <span className="font-typewriter text-xs text-[rgba(33,46,36,0.2)]">{i + 1}</span>
+                    <span className="font-typewriter text-xs text-[rgba(0,92,255,0.2)]">{i + 1}</span>
                   )}
                 </div>
               ))}
@@ -397,7 +397,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   <div className="flex items-center gap-3 flex-1 justify-end">
                     {hasMultipleCameras && (
                       <button onClick={flipCamera} title="Flip camera"
-                        className="font-typewriter text-xs text-[rgba(33,46,36,0.5)] hover:text-[rgba(33,46,36,0.8)] transition-colors flex items-center gap-1.5"
+                        className="font-typewriter text-xs text-[rgba(0,92,255,0.5)] hover:text-[rgba(0,92,255,0.8)] transition-colors flex items-center gap-1.5"
                       >
                         <RotateCcw size={14} /> Retake
                       </button>
@@ -407,16 +407,16 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   <button
                     onClick={handleStart}
                     className="w-[64px] h-[64px] rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
-                    style={{ border: "3px solid rgba(33,46,36,0.75)", background: "transparent" }}
+                    style={{ border: "3px solid rgba(0,92,255,0.75)", background: "transparent" }}
                     title="Start Shoot"
                   >
-                    <div className="w-[48px] h-[48px] rounded-full bg-[#212E24]" />
+                    <div className="w-[48px] h-[48px] rounded-full bg-[#005CFF]" />
                   </button>
                   <div className="flex-1" />
                 </>
               )}
               {state === "countdown" && (
-                <p className="text-center font-typewriter text-sm text-[rgba(33,46,36,0.45)] py-3">
+                <p className="text-center font-typewriter text-sm text-[rgba(0,92,255,0.45)] py-3">
                   Pose {currentShot + 1} of {TOTAL_PHOTOS} — get ready…
                 </p>
               )}
@@ -424,11 +424,11 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* Mobile-only info strip */}
-            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
+            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2" style={{ borderTop: "1px solid rgba(0,92,255,0.08)" }}>
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat} className="text-center">
-                  <p className="font-handwritten text-base font-semibold text-[#212E24]">{item.stat}</p>
-                  <p className="font-typewriter text-[10px] text-[rgba(33,46,36,0.45)] leading-tight mt-0.5">{item.detail}</p>
+                  <p className="font-handwritten text-base font-semibold text-[#005CFF]">{item.stat}</p>
+                  <p className="font-typewriter text-[10px] text-[rgba(0,92,255,0.45)] leading-tight mt-0.5">{item.detail}</p>
                 </div>
               ))}
             </div>
@@ -443,7 +443,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 <path
                   className="draw-arrow-path"
                   d="M62,6 C55,10 46,18 38,30 C28,46 18,62 10,78 C8,82 6,86 5,89"
-                  stroke="#212E24"
+                  stroke="#005CFF"
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -453,7 +453,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 <path
                   className="draw-arrow-path"
                   d="M2,83 C3,85 4,88 5,89 C7,89 10,90 13,90"
-                  stroke="#212E24"
+                  stroke="#005CFF"
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -464,23 +464,23 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* "How it works" — handwritten */}
-            <p className="font-handwritten text-2xl text-[#212E24]" style={{ lineHeight: "1.1" }}>
+            <p className="font-handwritten text-2xl text-[#005CFF]" style={{ lineHeight: "1.1" }}>
               How it works
             </p>
 
             <div className="flex flex-col gap-5">
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat}>
-                  <p className="font-handwritten text-3xl font-semibold text-[#212E24] leading-none">
+                  <p className="font-handwritten text-3xl font-semibold text-[#005CFF] leading-none">
                     {item.stat}
                   </p>
-                  <p className="font-typewriter text-xs text-[rgba(33,46,36,0.45)] mt-1 leading-relaxed">{item.detail}</p>
+                  <p className="font-typewriter text-xs text-[rgba(0,92,255,0.45)] mt-1 leading-relaxed">{item.detail}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col gap-1.5 pt-4" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
-              <p className="font-typewriter text-xs text-[rgba(33,46,36,0.3)] leading-relaxed">
+            <div className="flex flex-col gap-1.5 pt-4" style={{ borderTop: "1px solid rgba(0,92,255,0.08)" }}>
+              <p className="font-typewriter text-xs text-[rgba(0,92,255,0.3)] leading-relaxed">
                 Photos never leave your device.<br />No account, no cloud.
               </p>
             </div>
@@ -498,18 +498,18 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
 function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) {
   return (
-    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(253,252,247,0.92)", borderBottom: "1px solid rgba(33,46,36,0.07)" }}>
+    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(253,252,247,0.92)", borderBottom: "1px solid rgba(0,92,255,0.07)" }}>
       <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         <button
           onClick={onBack}
           className="font-typewriter text-sm hover:opacity-60 transition-opacity flex items-center gap-1.5 shrink-0"
-          style={{ color: "rgba(33,46,36,0.5)" }}
+          style={{ color: "rgba(0,92,255,0.5)" }}
         >
           ← Back
         </button>
         <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-          <span className="font-typewriter text-base font-semibold tracking-tight" style={{ color: "#212E24" }}>CitoFoto</span>
-          <span className="font-typewriter text-[10px] uppercase tracking-[0.15em] hidden sm:block" style={{ color: "rgba(33,46,36,0.35)" }}>
+          <span className="font-typewriter text-base font-semibold tracking-tight" style={{ color: "#005CFF" }}>CitoFoto</span>
+          <span className="font-typewriter text-[10px] uppercase tracking-[0.15em] hidden sm:block" style={{ color: "rgba(0,92,255,0.35)" }}>
             / {label}
           </span>
         </div>

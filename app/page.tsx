@@ -53,7 +53,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         <div
           className="absolute inset-0 opacity-[0.035]"
           style={{
-            backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)",
+            backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #005CFF 28px, #005CFF 29px)",
           }}
         />
 
@@ -61,7 +61,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse 90% 85% at 50% 50%, transparent 40%, rgba(33,46,36,0.055) 100%)",
+            background: "radial-gradient(ellipse 90% 85% at 50% 50%, transparent 40%, rgba(0,92,255,0.055) 100%)",
           }}
         />
       </div>
@@ -104,7 +104,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             <h1
               className="font-typewriter"
               style={{
-                color: "#212E24",
+                color: "#005CFF",
                 fontSize: "clamp(28px, 4.5vw, 48px)",
                 fontWeight: "600",
                 letterSpacing: "-0.01em",
@@ -125,13 +125,19 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             {/* CTA */}
             <button
               onClick={onOpen}
-              className="font-typewriter transition-colors"
-          onMouseEnter={e => (e.currentTarget.style.background = "#111a13")}
-          onMouseLeave={e => (e.currentTarget.style.background = "#212E24")}
+              className="font-typewriter"
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "#005CFF";
+                e.currentTarget.style.color = "#FDFCF7";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "#FDFCF7";
+                e.currentTarget.style.color = "#005CFF";
+              }}
               style={{
-                background: "#212E24",
-                color: "#FDFCF7",
-                border: "none",
+                background: "#FDFCF7",
+                color: "#005CFF",
+                border: "2px solid #005CFF",
                 padding: "clamp(12px, 1.5vw, 15px) 28px",
                 fontSize: "clamp(16px, 2.2vw, 24px)",
                 lineHeight: "140%",
@@ -140,6 +146,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                 cursor: "pointer",
                 width: "100%",
                 letterSpacing: "0.01em",
+                transition: "background 0.22s ease, color 0.22s ease",
               }}
             >
               Step in to create memories
