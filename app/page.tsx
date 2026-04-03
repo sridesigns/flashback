@@ -33,7 +33,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
   return (
     <div
       className="w-full min-h-screen flex flex-col font-typewriter relative overflow-hidden"
-      style={{ background: "#FAFAF9" }}
+      style={{ background: "#FAF6ED" }}
     >
 
       {/* ── Texture layer 1: paper grain (animated drift) ── */}
@@ -53,7 +53,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         <div
           className="absolute inset-0 opacity-[0.035]"
           style={{
-            backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #1C1917 28px, #1C1917 29px)",
+            backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)",
           }}
         />
 
@@ -61,7 +61,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse 90% 85% at 50% 50%, transparent 40%, rgba(28,25,23,0.055) 100%)",
+            background: "radial-gradient(ellipse 90% 85% at 50% 50%, transparent 40%, rgba(33,46,36,0.055) 100%)",
           }}
         />
       </div>
@@ -104,7 +104,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             <h1
               className="font-typewriter"
               style={{
-                color: "#1C1917",
+                color: "#212E24",
                 fontSize: "clamp(28px, 4.5vw, 48px)",
                 fontWeight: "600",
                 letterSpacing: "-0.01em",
@@ -129,8 +129,8 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
               onClick={onOpen}
               className="font-typewriter transition-opacity hover:opacity-80 active:opacity-60"
               style={{
-                background: "#1C1917",
-                color: "#FAFAF9",
+                background: "#212E24",
+                color: "#FAF6ED",
                 border: "none",
                 padding: "clamp(12px, 1.5vw, 15px) 28px",
                 fontSize: "clamp(16px, 2.2vw, 24px)",

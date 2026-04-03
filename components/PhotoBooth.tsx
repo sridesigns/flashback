@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import { RotateCcw } from "lucide-react";
 import PhotoStrip, { PhotoStripHandle } from "./PhotoStrip";
 import { captureFromVideo, compressForUrl } from "@/lib/photoUtils";
 import { uploadBlob } from "@/lib/blobStore";
@@ -188,10 +189,10 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           {/* Actions */}
           <div className="flex flex-col gap-6 md:pt-4">
             <div>
-              <h2 className="font-handwritten text-4xl font-semibold leading-tight" style={{ color: "#1C1917" }}>
+              <h2 className="font-handwritten text-4xl font-semibold leading-tight" style={{ color: "#212E24" }}>
                 Your strip<br />is ready.
               </h2>
-              <p className="font-typewriter text-sm mt-2 leading-relaxed" style={{ color: "rgba(28,25,23,0.5)" }}>
+              <p className="font-typewriter text-sm mt-2 leading-relaxed" style={{ color: "rgba(33,46,36,0.5)" }}>
                 Four poses. One memory.
               </p>
             </div>
@@ -274,7 +275,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           <filter id="paper-booth"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0.15" /></filter>
           <rect width="100%" height="100%" filter="url(#paper-booth)" />
         </svg>
-        <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #1C1917 28px, #1C1917 29px)" }} />
+        <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)" }} />
       </div>
 
       <BoothHeader label="Regular Booth" onBack={onHome} />
@@ -288,7 +289,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             {/* Camera viewport */}
             <div
               className="relative w-full max-w-[320px] mx-auto overflow-hidden rounded-xl bg-[#D9D5CF]"
-              style={{ aspectRatio: "3/4", border: "1.5px solid rgba(28,25,23,0.18)", boxShadow: "0 4px 24px rgba(28,25,23,0.10)" }}
+              style={{ aspectRatio: "3/4", border: "1.5px solid rgba(33,46,36,0.18)", boxShadow: "0 4px 24px rgba(33,46,36,0.10)" }}
             >
               {/* Permission loading */}
               {state === "permission" && (
@@ -342,10 +343,10 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               {showFlash && <div className="absolute inset-0 bg-white z-20 animate-flash pointer-events-none" />}
 
               {/* Corner marks — subtle editorial style */}
-              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[rgba(28,25,23,0.25)] pointer-events-none" />
-              <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[rgba(28,25,23,0.25)] pointer-events-none" />
-              <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[rgba(28,25,23,0.25)] pointer-events-none" />
-              <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[rgba(28,25,23,0.25)] pointer-events-none" />
+              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-[rgba(33,46,36,0.25)] pointer-events-none" />
+              <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-[rgba(33,46,36,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 left-2 w-4 h-4 border-b border-l border-[rgba(33,46,36,0.25)] pointer-events-none" />
+              <div className="absolute bottom-2 right-2 w-4 h-4 border-b border-r border-[rgba(33,46,36,0.25)] pointer-events-none" />
             </div>
 
             {/* Thumbnail slots — fill as photos are captured */}
@@ -360,21 +361,21 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                     width: "22%",
                     aspectRatio: "3/4",
                     border: photos[i]
-                      ? "1.5px solid rgba(28,25,23,0.4)"
-                      : "1.5px dashed rgba(28,25,23,0.18)",
-                    background: photos[i] ? "transparent" : "rgba(28,25,23,0.02)",
+                      ? "1.5px solid rgba(33,46,36,0.4)"
+                      : "1.5px dashed rgba(33,46,36,0.18)",
+                    background: photos[i] ? "transparent" : "rgba(33,46,36,0.02)",
                   }}
                 >
                   {photos[i] ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photos[i]} alt={`Shot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover bw-photo" />
-                      <span className="absolute top-0.5 left-0.5 bg-[rgba(28,25,23,0.55)] text-[#FAFAF9] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
+                      <span className="absolute top-0.5 left-0.5 bg-[rgba(33,46,36,0.55)] text-[#FAF6ED] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
                         {i + 1}
                       </span>
                     </>
                   ) : (
-                    <span className="font-typewriter text-xs text-[rgba(28,25,23,0.2)]">{i + 1}</span>
+                    <span className="font-typewriter text-xs text-[rgba(33,46,36,0.2)]">{i + 1}</span>
                   )}
                 </div>
               ))}
@@ -388,9 +389,9 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   <div className="flex items-center gap-3 flex-1 justify-end">
                     {hasMultipleCameras && (
                       <button onClick={flipCamera} title="Flip camera"
-                        className="font-typewriter text-xs text-[rgba(28,25,23,0.5)] hover:text-[rgba(28,25,23,0.8)] transition-colors flex items-center gap-1.5"
+                        className="font-typewriter text-xs text-[rgba(33,46,36,0.5)] hover:text-[rgba(33,46,36,0.8)] transition-colors flex items-center gap-1.5"
                       >
-                        <FlipIcon /> Flip
+                        <RotateCcw size={14} /> Retake
                       </button>
                     )}
                   </div>
@@ -398,16 +399,16 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   <button
                     onClick={handleStart}
                     className="w-[64px] h-[64px] rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
-                    style={{ border: "3px solid rgba(28,25,23,0.75)", background: "transparent" }}
+                    style={{ border: "3px solid rgba(33,46,36,0.75)", background: "transparent" }}
                     title="Start Shoot"
                   >
-                    <div className="w-[48px] h-[48px] rounded-full bg-[#1C1917]" />
+                    <div className="w-[48px] h-[48px] rounded-full bg-[#212E24]" />
                   </button>
                   <div className="flex-1" />
                 </>
               )}
               {state === "countdown" && (
-                <p className="text-center font-typewriter text-sm text-[rgba(28,25,23,0.45)] py-3">
+                <p className="text-center font-typewriter text-sm text-[rgba(33,46,36,0.45)] py-3">
                   Pose {currentShot + 1} of {TOTAL_PHOTOS} — get ready…
                 </p>
               )}
@@ -415,11 +416,11 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* Mobile-only info strip */}
-            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2" style={{ borderTop: "1px solid rgba(28,25,23,0.08)" }}>
+            <div className="md:hidden w-full flex items-center justify-center gap-5 py-2" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat} className="text-center">
-                  <p className="font-handwritten text-base font-semibold text-[#1C1917]">{item.stat}</p>
-                  <p className="font-typewriter text-[10px] text-[rgba(28,25,23,0.45)] leading-tight mt-0.5">{item.detail}</p>
+                  <p className="font-handwritten text-base font-semibold text-[#212E24]">{item.stat}</p>
+                  <p className="font-typewriter text-[10px] text-[rgba(33,46,36,0.45)] leading-tight mt-0.5">{item.detail}</p>
                 </div>
               ))}
             </div>
@@ -434,7 +435,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 <path
                   className="draw-arrow-path"
                   d="M62,6 C55,10 46,18 38,30 C28,46 18,62 10,78 C8,82 6,86 5,89"
-                  stroke="#1C1917"
+                  stroke="#212E24"
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -444,7 +445,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 <path
                   className="draw-arrow-path"
                   d="M2,83 C3,85 4,88 5,89 C7,89 10,90 13,90"
-                  stroke="#1C1917"
+                  stroke="#212E24"
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -455,23 +456,23 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* "How it works" — handwritten */}
-            <p className="font-handwritten text-2xl text-[#1C1917]" style={{ lineHeight: "1.1" }}>
+            <p className="font-handwritten text-2xl text-[#212E24]" style={{ lineHeight: "1.1" }}>
               How it works
             </p>
 
             <div className="flex flex-col gap-5">
               {HOW_IT_WORKS.map((item) => (
                 <div key={item.stat}>
-                  <p className="font-handwritten text-3xl font-semibold text-[#1C1917] leading-none">
+                  <p className="font-handwritten text-3xl font-semibold text-[#212E24] leading-none">
                     {item.stat}
                   </p>
-                  <p className="font-typewriter text-xs text-[rgba(28,25,23,0.45)] mt-1 leading-relaxed">{item.detail}</p>
+                  <p className="font-typewriter text-xs text-[rgba(33,46,36,0.45)] mt-1 leading-relaxed">{item.detail}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex flex-col gap-1.5 pt-4" style={{ borderTop: "1px solid rgba(28,25,23,0.08)" }}>
-              <p className="font-typewriter text-xs text-[rgba(28,25,23,0.3)] leading-relaxed">
+            <div className="flex flex-col gap-1.5 pt-4" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
+              <p className="font-typewriter text-xs text-[rgba(33,46,36,0.3)] leading-relaxed">
                 Photos never leave your device.<br />No account, no cloud.
               </p>
             </div>
@@ -489,18 +490,18 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
 function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) {
   return (
-    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(250,250,249,0.92)", borderBottom: "1px solid rgba(28,25,23,0.07)" }}>
+    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(250,246,237,0.92)", borderBottom: "1px solid rgba(33,46,36,0.07)" }}>
       <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         <button
           onClick={onBack}
           className="font-typewriter text-sm hover:opacity-60 transition-opacity flex items-center gap-1.5 shrink-0"
-          style={{ color: "rgba(28,25,23,0.5)" }}
+          style={{ color: "rgba(33,46,36,0.5)" }}
         >
           ← Back
         </button>
         <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-          <span className="font-typewriter text-base font-semibold tracking-tight" style={{ color: "#1C1917" }}>CitoFoto</span>
-          <span className="font-typewriter text-[10px] uppercase tracking-[0.15em] hidden sm:block" style={{ color: "rgba(28,25,23,0.35)" }}>
+          <span className="font-typewriter text-base font-semibold tracking-tight" style={{ color: "#212E24" }}>CitoFoto</span>
+          <span className="font-typewriter text-[10px] uppercase tracking-[0.15em] hidden sm:block" style={{ color: "rgba(33,46,36,0.35)" }}>
             / {label}
           </span>
         </div>
@@ -528,10 +529,3 @@ function CameraOffIcon() {
   );
 }
 
-function FlipIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-    </svg>
-  );
-}

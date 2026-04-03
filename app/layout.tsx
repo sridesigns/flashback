@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Zilla_Slab, Caveat } from "next/font/google";
+import { Fraunces, Inter, Crimson_Pro, Caveat } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -17,7 +17,7 @@ const inter = Inter({
   weight: ["400", "500", "600"],
 });
 
-const zillaSlab = Zilla_Slab({
+const crimsonPro = Crimson_Pro({
   subsets: ["latin"],
   variable: "--font-typewriter",
   display: "swap",
@@ -57,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${zillaSlab.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${crimsonPro.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );
