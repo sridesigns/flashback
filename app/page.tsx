@@ -33,7 +33,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
   return (
     <div
       className="w-full min-h-screen flex flex-col font-typewriter relative overflow-hidden"
-      style={{ background: "#FAF6ED" }}
+      style={{ background: "#FDFCF7" }}
     >
 
       {/* ── Texture layer 1: paper grain (animated drift) ── */}
@@ -130,7 +130,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
           onMouseLeave={e => (e.currentTarget.style.background = "#212E24")}
               style={{
                 background: "#212E24",
-                color: "#FAF6ED",
+                color: "#FDFCF7",
                 border: "none",
                 padding: "clamp(12px, 1.5vw, 15px) 28px",
                 fontSize: "clamp(16px, 2.2vw, 24px)",

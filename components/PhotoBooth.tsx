@@ -378,7 +378,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photos[i]} alt={`Shot ${i + 1}`} className="absolute inset-0 w-full h-full object-cover bw-photo" />
-                      <span className="absolute top-0.5 left-0.5 bg-[rgba(33,46,36,0.55)] text-[#FAF6ED] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
+                      <span className="absolute top-0.5 left-0.5 bg-[rgba(33,46,36,0.55)] text-[#FDFCF7] text-[7px] font-typewriter font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-10">
                         {i + 1}
                       </span>
                     </>
@@ -498,7 +498,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
 function BoothHeader({ label, onBack }: { label: string; onBack?: () => void }) {
   return (
-    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(250,246,237,0.92)", borderBottom: "1px solid rgba(33,46,36,0.07)" }}>
+    <header className="w-full sticky top-0 z-20 backdrop-blur-md" style={{ background: "rgba(253,252,247,0.92)", borderBottom: "1px solid rgba(33,46,36,0.07)" }}>
       <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         <button
           onClick={onBack}

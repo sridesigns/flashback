@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Crimson_Pro, Caveat } from "next/font/google";
+import { Fraunces, Inter, EB_Garamond, Caveat } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -17,11 +17,11 @@ const inter = Inter({
   weight: ["400", "500", "600"],
 });
 
-const crimsonPro = Crimson_Pro({
+const ebGaramond = EB_Garamond({
   subsets: ["latin"],
   variable: "--font-typewriter",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   style: ["normal", "italic"],
 });
 
@@ -57,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${crimsonPro.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${ebGaramond.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );
