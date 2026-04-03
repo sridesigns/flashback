@@ -20,7 +20,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start bg-cream">
+    <main className="min-h-screen flex flex-col items-center justify-start" style={{ background: "#FDF6EB" }}>
       {mode === "home"    && <LandingPage onOpen={() => setMode("regular")} />}
       {mode === "regular" && <PhotoBooth onHome={goHome} />}
       {mode === "duet"    && <DuetBooth  onHome={goHome} />}
@@ -76,7 +76,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             alt="Film strip sketch illustration"
             className="illus-float w-auto object-contain select-none"
             style={{
-              maxHeight: "clamp(220px, 40vh, 720px)",
+              maxHeight: "clamp(220px, 62vh, 780px)",
               filter: "drop-shadow(0 20px 56px rgba(0,0,0,0.22))",
             }}
             draggable={false}
@@ -121,7 +121,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             {/* CTA */}
             <button
               onClick={onOpen}
-              className="font-typewriter w-full sm:w-auto sm:self-start"
+              className="font-typewriter"
               onMouseEnter={e => { e.currentTarget.style.background = "#d4a820"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#F2C94C"; }}
               style={{
@@ -135,6 +135,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                 borderRadius: "8px",
                 cursor: "pointer",
                 letterSpacing: "0.01em",
+                width: "min(100%, 360px)",
                 transition: "background 0.22s ease",
               }}
             >
