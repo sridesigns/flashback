@@ -180,8 +180,16 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   if (state === "done" && photos.length === TOTAL_PHOTOS) {
     return (
       <div className="w-full min-h-screen flex flex-col page-transition booth-bg">
+        {/* Paper texture — same as camera view */}
+        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+          <svg className="grain-layer absolute w-[200%] h-[200%] -top-1/2 -left-1/2 opacity-[0.032]" xmlns="http://www.w3.org/2000/svg">
+            <filter id="paper-done"><feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0.15" /></filter>
+            <rect width="100%" height="100%" filter="url(#paper-done)" />
+          </svg>
+          <div className="absolute inset-0 opacity-[0.028]" style={{ backgroundImage: "repeating-linear-gradient(180deg, transparent 0px, transparent 28px, #212E24 28px, #212E24 29px)" }} />
+        </div>
         <BoothHeader label="Regular Booth" onBack={handleHome} />
-        <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6">
+        <div className="flex-1 w-full max-w-4xl mx-auto px-4 py-8 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-12 md:items-start gap-6 relative z-10">
           {/* Strip */}
           <div className="flex justify-center">
             <PhotoStrip ref={stripRef} photos={photos} />
@@ -225,21 +233,21 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             </div>
 
             {/* Duet share link */}
-            <div className="border-t border-dark-brown/8 pt-5 flex flex-col gap-2">
-              <p className="font-sans text-xs font-semibold text-dark-brown">
+            <div className="pt-5 flex flex-col gap-2" style={{ borderTop: "1px solid rgba(33,46,36,0.08)" }}>
+              <p className="font-typewriter text-xs font-semibold" style={{ color: "#212E24" }}>
                 Start a Pose &amp; Pass
               </p>
-              <p className="font-sans text-[11px] text-warm-brown/55 leading-relaxed">
+              <p className="font-typewriter text-[11px] leading-relaxed" style={{ color: "rgba(33,46,36,0.5)" }}>
                 Share this link with a partner — they&apos;ll pose alongside your ghost and you&apos;ll both get a combined strip.
               </p>
               {linkLoading ? (
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="w-3 h-3 border-2 border-burnt-orange border-t-transparent rounded-full animate-spin" />
-                  <span className="font-sans text-xs text-warm-brown/50">Generating link…</span>
+                  <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#212E24", borderTopColor: "transparent" }} />
+                  <span className="font-typewriter text-xs" style={{ color: "rgba(33,46,36,0.5)" }}>Generating link…</span>
                 </div>
               ) : shareLink ? (
                 <>
-                  <div className="bg-parchment/60 border border-dark-brown/10 rounded-lg px-3 py-2 font-mono text-[10px] text-warm-brown break-all leading-relaxed mt-1">
+                  <div className="rounded-lg px-3 py-2 font-mono text-[10px] break-all leading-relaxed mt-1" style={{ background: "rgba(33,46,36,0.04)", border: "1px solid rgba(33,46,36,0.1)", color: "rgba(33,46,36,0.6)" }}>
                     {shareLink}
                   </div>
                   <button
@@ -256,7 +264,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               ) : null}
             </div>
 
-            <p className="font-sans text-xs text-warm-brown/30 leading-relaxed">
+            <p className="font-typewriter text-xs leading-relaxed" style={{ color: "rgba(33,46,36,0.3)" }}>
               Your photos never leave your device.
             </p>
           </div>
