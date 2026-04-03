@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CornerUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import PhotoBooth from "@/components/PhotoBooth";
 import DuetBooth  from "@/components/DuetBooth";
 
@@ -115,35 +115,42 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
               className="font-sans"
               style={{ color: "#7A6E62", fontSize: "clamp(13px, 1.4vw, 15px)", lineHeight: "1.65" }}
             >
-              A retro booth that lives in your browser — No cloud. No account.
+              A retro booth that lives in your browser.
             </p>
 
             {/* CTA */}
-            <button
-              onClick={onOpen}
-              className="font-typewriter"
-              onMouseEnter={e => { e.currentTarget.style.background = "#d4a820"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#F2C94C"; }}
-              style={{
-                background: "#F2C94C",
-                color: "#1A1713",
-                border: "none",
-                padding: "clamp(12px, 1.4vw, 16px) clamp(20px, 2vw, 32px)",
-                fontSize: "clamp(15px, 1.6vw, 19px)",
-                lineHeight: "140%",
-                fontFamily: "inherit",
-                borderRadius: "8px",
-                cursor: "pointer",
-                letterSpacing: "0.01em",
-                width: "min(100%, 360px)",
-                transition: "background 0.22s ease",
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                Step in to create memories
-                <CornerUpRight size={18} style={{ animation: "cta-nudge 2s ease-in-out infinite" }} />
-              </span>
-            </button>
+            <div className="flex flex-col gap-2.5" style={{ width: "min(100%, 360px)" }}>
+              <button
+                onClick={onOpen}
+                className="font-typewriter"
+                onMouseEnter={e => { e.currentTarget.style.background = "#FFDD00"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#F2C94C"; }}
+                style={{
+                  background: "#F2C94C",
+                  color: "#1A1713",
+                  border: "none",
+                  padding: "clamp(12px, 1.4vw, 16px) clamp(20px, 2vw, 32px)",
+                  fontSize: "clamp(15px, 1.6vw, 19px)",
+                  lineHeight: "1",
+                  fontFamily: "inherit",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  letterSpacing: "0.01em",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  transition: "background 0.22s ease",
+                }}
+              >
+                Enter the Booth
+                <ArrowRight size={18} style={{ animation: "cta-nudge 2s ease-in-out infinite", flexShrink: 0 }} />
+              </button>
+              <p className="font-sans" style={{ color: "#2D6A4F", fontSize: "clamp(11px, 1.1vw, 13px)", letterSpacing: "0.02em" }}>
+                No cloud. No account.
+              </p>
+            </div>
 
           </div>
         </div>
