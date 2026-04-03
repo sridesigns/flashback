@@ -145,7 +145,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                   transition: "background 0.22s ease",
                 }}
               >
-                Enter the Booth
+                Enter into the Booth
                 <ArrowRight size={18} style={{ animation: "cta-nudge 2s ease-in-out infinite", flexShrink: 0 }} />
               </button>
               <p className="font-sans" style={{ color: "#2D6A4F", fontSize: "clamp(11px, 1.1vw, 13px)", letterSpacing: "0.02em" }}>
