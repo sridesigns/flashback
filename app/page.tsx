@@ -111,9 +111,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                 lineHeight: "120%",
               }}
             >
-              Four frames. One strip.<br />
-              Infinite reasons to<br />
-              squeeze in closer.
+              Four frames. One strip. Infinite reasons to squeeze in closer.
             </h1>
 
             {/* Body */}
@@ -157,6 +155,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
           made with ❤️ by sriram venugopal
         </p>
         <div className="flex items-center gap-3">
+          <span style={{ color: "#57534E", fontSize: "clamp(0.65rem, 1.5vw, 0.72rem)" }}>Got feedback?</span>
           <a href="https://x.com/sriongrid" target="_blank" rel="noopener noreferrer" title="X (Twitter)" style={{ color: "#57534E" }} className="hover:opacity-60 transition-opacity">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-label="X"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
