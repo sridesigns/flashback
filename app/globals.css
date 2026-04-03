@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Left panel: compact on mobile, full-height on desktop */
+.left-panel-height {
+  min-height: 45vh;
+  max-height: 58vh;
+}
+@media (min-width: 768px) {
+  .left-panel-height {
+    min-height: 100vh;
+    max-height: none;
+  }
+}
+
 @keyframes cta-nudge {
   0%, 100% { transform: translateX(0) rotate(0deg); }
   50%       { transform: translateX(3px) rotate(15deg); }
