@@ -10,16 +10,38 @@ interface DuetStripProps {
   p2ColorPhotos?: string[];
 }
 
-const TOTAL_PHOTOS = 4;
+const TOTAL_PHOTOS   = 4;
+const FILM_BASE      = "#1E140A";
+const SPROCKET_COLOR = "#130D06";
+const GOLD           = "#C9A84C";
 
-// ─── Canvas helpers ────────────────────────────────────────────────────────────
+// Per-frame grain texture — identical to PhotoStrip
+const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E")`;
 
-/** Draw img cover-cropped into (x, y, w, h) on ctx. */
-function drawCover(
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatDate(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
+}
+
+function nextStripNumber(): number {
+  try {
+    const key = "citofoto_strip_count";
+    const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
+    localStorage.setItem(key, String(n));
+    return n;
+  } catch {
+    return Math.floor(Math.random() * 900) + 100;
+  }
+}
+
+function drawImageCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
-  x: number, y: number,
-  w: number, h: number
+  x: number, y: number, w: number, h: number,
 ) {
   const ir = img.naturalWidth / img.naturalHeight;
   const tr = w / h;
@@ -36,9 +58,7 @@ function drawCover(
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number,
-  w: number, h: number,
-  r: number
+  x: number, y: number, w: number, h: number, r: number,
 ) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -53,33 +73,17 @@ function roundRect(
   ctx.closePath();
 }
 
-function nextStripNumber(): number {
-  try {
-    const key = "citofoto_strip_count";
-    const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
-    localStorage.setItem(key, String(n));
-    return n;
-  } catch {
-    return Math.floor(Math.random() * 900) + 100;
-  }
-}
-
-function formatDate(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}.${mm}.${yy}`;
-}
-
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos }: DuetStripProps) {
-  // Unified composited frames — both people in ONE image per frame
   const [composites, setComposites] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress,   setProgress]   = useState(0);
 
-  // ── Extract cutouts → compose unified frames ──────────────────────────────
+  const today   = new Date();
+  const dateStr = formatDate(today);
+
+  // ── Extract cutouts → compose unified frames ────────────────────────────────
   useEffect(() => {
     if (p1Photos.length !== TOTAL_PHOTOS || p2Photos.length !== TOTAL_PHOTOS) return;
     setProcessing(true);
@@ -89,24 +93,22 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
     const p2Source = p2ColorPhotos?.length === TOTAL_PHOTOS ? p2ColorPhotos : p2Photos;
 
     (async () => {
-      // Phase 1: Extract all 8 person cutouts (transparent PNGs)
       const cutouts: string[] = [];
       const allSources = [...p1Source, ...p2Source];
       for (let i = 0; i < allSources.length; i++) {
         const cutout = await extractPerson(allSources[i]);
         cutouts.push(cutout);
-        setProgress(Math.round(((i + 1) / allSources.length) * 70)); // 0-70%
+        setProgress(Math.round(((i + 1) / allSources.length) * 70));
       }
 
       const p1Cutouts = cutouts.slice(0, TOTAL_PHOTOS);
       const p2Cutouts = cutouts.slice(TOTAL_PHOTOS);
 
-      // Phase 2: Compose unified frames (both people in one image)
       const unified: string[] = [];
       for (let i = 0; i < TOTAL_PHOTOS; i++) {
         const frame = await composeDuetFrame(p1Cutouts[i], p2Cutouts[i]);
         unified.push(frame);
-        setProgress(70 + Math.round(((i + 1) / TOTAL_PHOTOS) * 30)); // 70-100%
+        setProgress(70 + Math.round(((i + 1) / TOTAL_PHOTOS) * 30));
       }
 
       setComposites(unified);
@@ -114,321 +116,371 @@ export default function DuetStrip({ p1Photos, p2Photos, p1ColorPhotos, p2ColorPh
     })();
   }, [p1Photos, p2Photos, p1ColorPhotos, p2ColorPhotos]);
 
-  // ── Download ────────────────────────────────────────────────────────────────
+  // ── Canvas download — matches PhotoStrip exactly ────────────────────────────
   const handleDownload = useCallback(async () => {
-    // Use unified composites, fall back to B&W originals
     const photos = composites.length === TOTAL_PHOTOS ? composites : p1Photos;
     if (photos.length < TOTAL_PHOTOS) return;
 
     const SCALE    = 2;
-    const frameW   = 255;          // 3:4 portrait aspect
-    const frameH   = 340;
-    const padding  = 18;
+    const photoW   = 300;
+    const photoH   = 400;
+    const padding  = 16;
     const gap      = 8;
-    const headerH  = 68;
-    const footerH  = 50;
-    const sidebarW = 30;
-    const holeW    = 13;
+    const headerH  = 60;
+    const footerH  = padding;   // even bottom padding — no URL text
+    const sidebarW = 28;
+    const holeW    = 6;
     const holeH    = 9;
-    const holeGap  = 20;
+    const holesN   = 5;
+    const borderW  = 3;
 
-    const logW = sidebarW * 2 + padding * 2 + frameW;
-    const logH = headerH + padding
-               + TOTAL_PHOTOS * frameH + (TOTAL_PHOTOS - 1) * gap
-               + padding + footerH;
+    const logicalW = sidebarW * 2 + padding * 2 + photoW;
+    const logicalH =
+      headerH + padding +
+      TOTAL_PHOTOS * photoH + (TOTAL_PHOTOS - 1) * gap +
+      padding + footerH;
 
-    const canvas = document.createElement("canvas");
-    canvas.width  = logW * SCALE;
-    canvas.height = logH * SCALE;
+    const canvas  = document.createElement("canvas");
+    canvas.width  = logicalW * SCALE;
+    canvas.height = logicalH * SCALE;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.scale(SCALE, SCALE);
-    const W = logW, H = logH;
+    const W = logicalW, H = logicalH;
 
-    // ── Strip background ──────────────────────────────────────────────────────
-    const baseFill = ctx.createLinearGradient(0, 0, 0, H);
-    baseFill.addColorStop(0, "#1C0F08");
-    baseFill.addColorStop(0.5, "#140A05");
-    baseFill.addColorStop(1, "#1C0F08");
-    ctx.fillStyle = baseFill;
+    // Film base
+    ctx.fillStyle = FILM_BASE;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Sidebar strips ────────────────────────────────────────────────────────
-    ctx.fillStyle = "#0D0603";
-    ctx.fillRect(0, 0, sidebarW, H);
-    ctx.fillRect(W - sidebarW, 0, sidebarW, H);
+    // Subtle warmth gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0,   "rgba(80,30,8,0.14)");
+    bgGrad.addColorStop(0.5, "rgba(0,0,0,0)");
+    bgGrad.addColorStop(1,   "rgba(0,0,0,0.12)");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
 
-    ctx.strokeStyle = "rgba(201,168,76,0.10)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(sidebarW, 0);     ctx.lineTo(sidebarW, H);
-    ctx.moveTo(W - sidebarW, 0); ctx.lineTo(W - sidebarW, H);
-    ctx.stroke();
-
-    // ── Film perforations ─────────────────────────────────────────────────────
-    const holesCount = Math.floor(H / holeGap);
-    for (let i = 0; i < holesCount; i++) {
-      const hy  = i * holeGap + (holeGap - holeH) / 2;
+    // Sprocket holes — 5 per side, 6×9 px
+    const holePad  = 16;
+    const holeStep = (H - holePad * 2 - holeH) / (holesN - 1);
+    for (let i = 0; i < holesN; i++) {
+      const hy  = holePad + i * holeStep;
       const hxL = (sidebarW - holeW) / 2;
       const hxR = W - sidebarW + (sidebarW - holeW) / 2;
-
-      ctx.fillStyle = "#050302";
-      roundRect(ctx, hxL, hy, holeW, holeH, 2); ctx.fill();
-      roundRect(ctx, hxR, hy, holeW, holeH, 2); ctx.fill();
-
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      roundRect(ctx, hxL + 1, hy + 1, holeW - 2, 2, 1); ctx.fill();
-      roundRect(ctx, hxR + 1, hy + 1, holeW - 2, 2, 1); ctx.fill();
-
-      ctx.strokeStyle = "rgba(201,168,76,0.15)";
-      ctx.lineWidth = 0.5;
-      roundRect(ctx, hxL, hy, holeW, holeH, 2); ctx.stroke();
-      roundRect(ctx, hxR, hy, holeW, holeH, 2); ctx.stroke();
+      ctx.fillStyle = SPROCKET_COLOR;
+      roundRect(ctx, hxL, hy, holeW, holeH, 1.5); ctx.fill();
+      roundRect(ctx, hxR, hy, holeW, holeH, 1.5); ctx.fill();
     }
 
-    // ── Header ────────────────────────────────────────────────────────────────
-    const px = sidebarW + padding;
-    ctx.textAlign = "center";
+    // Header
+    ctx.textAlign    = "center";
     ctx.textBaseline = "alphabetic";
-
-    ctx.fillStyle = "#C9A84C";
-    ctx.font = `bold 19px Georgia, "Times New Roman", serif`;
+    ctx.fillStyle = GOLD;
+    ctx.font = `bold 20px Georgia, "Times New Roman", serif`;
     ctx.fillText("CitoFoto", W / 2, padding + 20);
-
-    ctx.fillStyle = "#7a5535";
-    ctx.font = `600 8px Arial, sans-serif`;
-    ctx.letterSpacing = "4px";
-    ctx.fillText("POSE & PASS", W / 2, padding + 36);
-    ctx.letterSpacing = "0px";
-
-    ctx.strokeStyle = "rgba(201,168,76,0.15)";
-    ctx.lineWidth = 0.5;
+    ctx.fillStyle      = "rgba(180,120,55,0.45)";
+    ctx.font           = `500 9px Arial, sans-serif`;
+    ctx.letterSpacing  = "3px";
+    ctx.fillText(dateStr.toUpperCase(), W / 2, padding + 38);
+    ctx.letterSpacing  = "0px";
+    ctx.strokeStyle    = `rgba(201,168,76,0.18)`;
+    ctx.lineWidth      = 0.5;
     ctx.beginPath();
-    ctx.moveTo(px, headerH - 2);
-    ctx.lineTo(W - sidebarW - padding, headerH - 2);
+    ctx.moveTo(sidebarW + padding, headerH - 4);
+    ctx.lineTo(W - sidebarW - padding, headerH - 4);
     ctx.stroke();
 
-    // ── Load images ───────────────────────────────────────────────────────────
-    const loadImg = (src: string): Promise<HTMLImageElement> =>
+    // Load images
+    const loadImage = (src: string): Promise<HTMLImageElement> =>
       new Promise((res, rej) => {
         const img = new Image();
-        img.onload = () => res(img);
+        img.onload  = () => res(img);
         img.onerror = rej;
         img.src = src;
       });
 
-    let imgs: HTMLImageElement[];
-    try {
-      imgs = await Promise.all(photos.map(loadImg));
-    } catch (e) {
-      console.error("Failed to load images", e);
-      return;
-    }
+    let images: HTMLImageElement[];
+    try { images = await Promise.all(photos.map(loadImage)); }
+    catch (e) { console.error("Failed to load images", e); return; }
 
-    // ── Draw each frame (unified — both people in one image) ──────────────────
-    for (let i = 0; i < TOTAL_PHOTOS; i++) {
-      const frameX = px;
-      const frameY = headerH + padding + i * (frameH + gap);
+    for (let i = 0; i < images.length; i++) {
+      const px = sidebarW + padding;
+      const py = headerH + padding + i * (photoH + gap);
 
-      // Dark border
-      ctx.fillStyle = "#080402";
-      ctx.fillRect(frameX - 3, frameY - 3, frameW + 6, frameH + 6);
+      // Dark border frame
+      ctx.fillStyle = "#0e0805";
+      ctx.fillRect(px - borderW, py - borderW, photoW + borderW * 2, photoH + borderW * 2);
 
-      // Draw unified composite — cover-crop to fill frame
-      if (imgs[i]) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(frameX, frameY, frameW, frameH);
-        ctx.clip();
-        drawCover(ctx, imgs[i], frameX, frameY, frameW, frameH);
-        ctx.restore();
-      }
+      // Photo (cover-cropped)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(px, py, photoW, photoH);
+      ctx.clip();
+      drawImageCover(ctx, images[i], px, py, photoW, photoH);
+      ctx.restore();
 
-      // Vignette across the full frame
+      // Per-frame vignette
       const vig = ctx.createRadialGradient(
-        frameX + frameW / 2, frameY + frameH / 2, frameH * 0.25,
-        frameX + frameW / 2, frameY + frameH / 2, frameH * 0.88
+        px + photoW / 2, py + photoH / 2, photoH * 0.25,
+        px + photoW / 2, py + photoH / 2, photoH * 0.82,
       );
       vig.addColorStop(0, "rgba(0,0,0,0)");
-      vig.addColorStop(0.6, "rgba(0,0,0,0.12)");
       vig.addColorStop(1, "rgba(0,0,0,0.55)");
       ctx.fillStyle = vig;
-      ctx.fillRect(frameX, frameY, frameW, frameH);
+      ctx.fillRect(px, py, photoW, photoH);
 
       // Frame number badge
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      roundRect(ctx, frameX + 5, frameY + 5, 20, 14, 2); ctx.fill();
-      ctx.fillStyle = "#C9A84C";
-      ctx.font = `bold 9px monospace`;
-      ctx.textAlign = "left";
+      ctx.fillStyle    = "rgba(0,0,0,0.55)";
+      roundRect(ctx, px + 4, py + 4, 18, 15, 2);
+      ctx.fill();
+      ctx.fillStyle    = GOLD;
+      ctx.font         = `bold 9px monospace`;
+      ctx.textAlign    = "left";
       ctx.textBaseline = "middle";
-      ctx.fillText(`${i + 1}`, frameX + 10, frameY + 12);
+      ctx.fillText(`${i + 1}`, px + 9, py + 12);
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "alphabetic";
     }
 
-    // ── Footer ────────────────────────────────────────────────────────────────
-    ctx.strokeStyle = "rgba(201,168,76,0.12)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(px, H - footerH + 2);
-    ctx.lineTo(W - sidebarW - padding, H - footerH + 2);
-    ctx.stroke();
-
-    const now = new Date();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#6b4828";
-    ctx.font = `9px Arial, sans-serif`;
-    ctx.letterSpacing = "2px";
-    ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 18);
-    ctx.letterSpacing = "0px";
-    ctx.fillStyle = "rgba(100,65,30,0.45)";
-    ctx.font = `8px monospace`;
-    ctx.fillText(
-      now.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" }).toUpperCase(),
-      W / 2, H - footerH + 34
-    );
-
+    // Download
     const n        = nextStripNumber();
-    const date     = formatDate(now);
-    const filename = `CitoFoto_PoseAndPass_${n}_${date}.jpg`;
-
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    const filename = `CitoFoto_PoseAndPass_${n}_${formatDate(new Date())}.jpg`;
+    const link     = document.createElement("a");
+    link.download  = filename;
+    link.href      = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
-  }, [p1Photos, composites]);
+  }, [p1Photos, composites, dateStr]);
 
-  // ── Processing state ────────────────────────────────────────────────────────
+  // ── Processing state ─────────────────────────────────────────────────────────
   if (processing) {
     return (
       <div className="flex flex-col items-center gap-5 py-10 w-full">
         <div className="relative w-14 h-14">
-          <div className="absolute inset-0 rounded-full border-4 border-dark-brown/10" />
-          <div className="absolute inset-0 rounded-full border-4 border-burnt-orange border-t-transparent animate-spin" />
+          <div className="absolute inset-0 rounded-full border-4" style={{ borderColor: "rgba(232,89,60,0.12)" }} />
+          <div
+            className="absolute inset-0 rounded-full border-4 border-t-transparent animate-spin"
+            style={{ borderColor: "#E8593C", borderTopColor: "transparent" }}
+          />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-serif text-sm font-bold text-burnt-orange">{progress}<span className="text-[10px]">%</span></span>
+            <span className="font-typewriter text-sm font-bold" style={{ color: "#E8593C" }}>
+              {progress}<span className="text-[10px]">%</span>
+            </span>
           </div>
         </div>
         <div className="text-center">
-          <p className="font-serif text-dark-brown font-semibold text-sm">Placing you in the same booth…</p>
-          <p className="font-sans text-xs text-warm-brown/45 mt-1">Removing backgrounds &amp; compositing</p>
+          <p className="font-typewriter font-semibold text-sm" style={{ color: "#1A1713" }}>
+            Placing you in the same booth…
+          </p>
+          <p className="font-sans text-xs mt-1" style={{ color: "#7A6E62" }}>
+            Removing backgrounds &amp; compositing
+          </p>
         </div>
-        <div className="w-36 h-1 bg-dark-brown/10 rounded-full overflow-hidden">
-          <div className="h-full bg-burnt-orange rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="w-36 h-1 rounded-full overflow-hidden" style={{ background: "rgba(232,89,60,0.12)" }}>
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{ width: `${progress}%`, background: "#E8593C" }}
+          />
         </div>
       </div>
     );
   }
 
-  // Use unified composites for display
   const displayPhotos = composites.length === TOTAL_PHOTOS ? composites : p1Photos;
-  const frameCount = Math.min(displayPhotos.length, TOTAL_PHOTOS);
+  const frameCount    = Math.min(displayPhotos.length, TOTAL_PHOTOS);
 
-  // ── Strip ──────────────────────────────────────────────────────────────────
+  // ── Strip — identical layout to PhotoStrip ────────────────────────────────────
   return (
     <div className="flex flex-col items-center gap-4 w-full">
 
-      {/* ── Film strip ──────────────────────────────────────────────────────── */}
+      {/* SVG filter defs — B&W weighted luminosity, matches PhotoStrip exactly */}
+      <svg aria-hidden="true" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <defs>
+          <filter id="bw-film-duet" colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values={[
+                "0.28 0.58 0.14 0 0.02",
+                "0.22 0.58 0.14 0 -0.02",
+                "0.18 0.50 0.10 0 -0.04",
+                "0    0    0    1 0",
+              ].join("  ")}
+            />
+          </filter>
+        </defs>
+      </svg>
+
+      {/* Film strip shell */}
       <div
-        className="relative shadow-2xl overflow-hidden"
         style={{
-          width: "min(180px, 50vw)",
-          background: "linear-gradient(180deg, #1C0F08 0%, #140A05 50%, #1C0F08 100%)",
-          borderRadius: "2px",
+          position:     "relative",
+          width:        "clamp(130px, 14vw, 150px)",
+          background:   FILM_BASE,
+          borderRadius: "3px",
+          overflow:     "hidden",
+          boxShadow:    "0 24px 64px rgba(0,0,0,0.72), 0 8px 20px rgba(0,0,0,0.45)",
+          flexShrink:   0,
         }}
       >
-        <SprocketTrack side="left" />
-        <SprocketTrack side="right" />
+        {/* Sprockets — 5 holes per side, .film-hole class */}
+        {(["left", "right"] as const).map(side => (
+          <div
+            key={side}
+            style={{
+              position:       "absolute",
+              [side]:         0,
+              top:            0,
+              bottom:         0,
+              width:          "16px",
+              display:        "flex",
+              flexDirection:  "column",
+              alignItems:     "center",
+              justifyContent: "space-around",
+              padding:        "12px 0",
+              zIndex:         10,
+              background:     FILM_BASE,
+            }}
+          >
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="film-hole" />
+            ))}
+          </div>
+        ))}
 
-        <div className="mx-[22px] flex flex-col">
+        {/* Inner content (clear of sprocket gutters) */}
+        <div style={{ margin: "0 16px" }}>
 
           {/* Header */}
-          <div className="text-center py-3 border-b border-gold/10">
-            <p className="font-serif text-gold text-sm font-bold tracking-wider">CitoFoto</p>
-            <p className="font-sans text-warm-brown/40 text-[8px] tracking-[0.25em] uppercase mt-0.5">Pose &amp; Pass</p>
+          <div
+            style={{
+              textAlign:    "center",
+              padding:      "10px 4px 8px",
+              borderBottom: "0.5px solid rgba(201,168,76,0.15)",
+            }}
+          >
+            <p
+              style={{
+                fontFamily:    "Georgia, 'Times New Roman', serif",
+                color:         GOLD,
+                fontSize:      "clamp(11px, 2.8vw, 14px)",
+                fontWeight:    "bold",
+                letterSpacing: "0.06em",
+                margin:        0,
+                lineHeight:    1.2,
+              }}
+            >
+              CitoFoto
+            </p>
+            <p
+              style={{
+                fontFamily:    "monospace",
+                color:         "rgba(180,120,55,0.42)",
+                fontSize:      "clamp(6.5px, 1.6vw, 8.5px)",
+                letterSpacing: "0.22em",
+                margin:        "3px 0 0",
+                textTransform: "uppercase",
+              }}
+            >
+              {dateStr}
+            </p>
           </div>
 
-          {/* Frames — unified composites, 4:3 aspect ratio */}
-          <div className="flex flex-col gap-1.5 py-2">
+          {/* Photo frames */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "5px 0" }}>
             {Array.from({ length: frameCount }).map((_, i) => (
               <div
                 key={i}
-                className="relative overflow-hidden border border-gold/8"
-                style={{ aspectRatio: "3/4" }}
+                className="frame-in"
+                style={{
+                  position:          "relative",
+                  overflow:          "hidden",
+                  animationDelay:    `${0.1 + i * 0.09}s`,
+                  animationFillMode: "both",
+                }}
               >
-                {/* Single unified image — both people in one frame */}
+                {/* B&W via SVG feColorMatrix — same as PhotoStrip */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={displayPhotos[i]}
-                  alt={`Pose & Pass shot ${i + 1}`}
-                  className="absolute inset-0 w-full h-full object-cover bw-photo"
-                />
-
-                {/* Booth vignette */}
-                <div
-                  className="absolute inset-0 pointer-events-none z-20"
+                  alt={`Frame ${i + 1}`}
                   style={{
-                    background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.18) 70%, rgba(0,0,0,0.52) 100%)"
+                    width:       "100%",
+                    display:     "block",
+                    aspectRatio: "3/4",
+                    objectFit:   "cover",
+                    filter:      "url(#bw-film-duet)",
                   }}
                 />
 
-                {/* Frame number */}
-                <span className="absolute top-1 left-1 bg-black/55 text-gold text-[7px] font-mono font-bold w-3.5 h-3.5 flex items-center justify-center rounded-sm z-30">
+                {/* Per-frame vignette */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position:      "absolute",
+                    inset:         0,
+                    background:    "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
+                    zIndex:        2,
+                    pointerEvents: "none",
+                  }}
+                />
+
+                {/* Per-frame grain — feTurbulence 0.75 / 4oct, overlay at 8% */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position:        "absolute",
+                    inset:           0,
+                    backgroundImage: GRAIN_URI,
+                    backgroundSize:  "200px 200px",
+                    opacity:         0.08,
+                    mixBlendMode:    "overlay" as React.CSSProperties["mixBlendMode"],
+                    zIndex:          3,
+                    pointerEvents:   "none",
+                  }}
+                />
+
+                {/* Frame number badge */}
+                <span
+                  style={{
+                    position:       "absolute",
+                    top:            "3px",
+                    left:           "3px",
+                    zIndex:         5,
+                    background:     "rgba(0,0,0,0.52)",
+                    color:          GOLD,
+                    fontFamily:     "monospace",
+                    fontSize:       "7px",
+                    fontWeight:     "bold",
+                    width:          "13px",
+                    height:         "13px",
+                    display:        "flex",
+                    alignItems:     "center",
+                    justifyContent: "center",
+                    borderRadius:   "2px",
+                  }}
+                >
                   {i + 1}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Footer */}
-          <div className="text-center py-2 border-t border-gold/8">
-            <p className="font-sans text-warm-brown/25 text-[7px] tracking-widest uppercase">
-              {new Date().toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" })}
-            </p>
-          </div>
+          {/* Even bottom padding — no URL text */}
+          <div style={{ height: "10px" }} />
+
         </div>
       </div>
 
       {/* Save button */}
       <button
         onClick={handleDownload}
-        className="leather-btn leather-btn-primary w-full max-w-[300px] font-sans font-semibold text-sm py-3 px-6 rounded-lg flex items-center justify-center gap-2"
+        className="font-sans font-medium text-sm py-3 px-6 rounded-full flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
+        style={{ background: "#F2C94C", color: "#1A1713" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "#FFDD00"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "#F2C94C"; }}
       >
         <DownloadIcon />
         Save Strip
       </button>
-    </div>
-  );
-}
-
-// ─── Sprocket track ────────────────────────────────────────────────────────────
-
-function SprocketTrack({ side }: { side: "left" | "right" }) {
-  return (
-    <div
-      className="absolute top-0 bottom-0 flex flex-col items-center justify-around py-3 z-10"
-      style={{
-        [side]: 0,
-        width: "22px",
-        background: "#0D0603",
-        borderRight: side === "left" ? "0.5px solid rgba(201,168,76,0.08)" : undefined,
-        borderLeft:  side === "right" ? "0.5px solid rgba(201,168,76,0.08)" : undefined,
-      }}
-    >
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: "11px",
-            height: "7px",
-            background: "#050302",
-            borderRadius: "1.5px",
-            border: "0.5px solid rgba(201,168,76,0.12)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-            flexShrink: 0,
-          }}
-        />
-      ))}
     </div>
   );
 }

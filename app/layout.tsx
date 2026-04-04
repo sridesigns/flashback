@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, DM_Mono, DM_Serif_Display, Caveat } from "next/font/google";
+import { Fraunces, DM_Mono, Crimson_Pro, Caveat } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -18,11 +18,11 @@ const dmMono = DM_Mono({
   style: ["normal", "italic"],
 });
 
-const dmSerifDisplay = DM_Serif_Display({
+const crimsonPro = Crimson_Pro({
   subsets: ["latin"],
   variable: "--font-typewriter",
   display: "swap",
-  weight: ["400"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
 
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${dmMono.variable} ${dmSerifDisplay.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${dmMono.variable} ${crimsonPro.variable} ${caveat.variable}`}>
       <body>{children}</body>
     </html>
   );

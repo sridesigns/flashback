@@ -745,36 +745,6 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
           style={{ width: "380px", borderLeft: `1px solid ${BRAND_A(0.1)}` }}
         >
 
-          {/* Partner's photo preview (partner role only) */}
-          {role === "partner" && leftPhotos[0] && (
-            <div className="flex flex-col gap-2">
-              <p className="font-sans text-xs tracking-[0.14em] uppercase" style={{ color: BODY }}>
-                Your partner
-              </p>
-              <div
-                className="overflow-hidden rounded-lg"
-                style={{ border: `1.5px solid ${BRAND_A(0.3)}` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={leftPhotos[0]}
-                  alt="Partner's first shot"
-                  className="w-full block bw-photo"
-                  style={{ aspectRatio: "3/4", objectFit: "cover" }}
-                />
-                <div
-                  className="text-center py-1.5 font-sans text-[9px] tracking-widest uppercase"
-                  style={{ background: BRAND_A(0.08), color: BRAND }}
-                >
-                  Ghost Preview
-                </div>
-              </div>
-              <p className="font-sans text-[10px] leading-relaxed" style={{ color: BODY }}>
-                Their photo appears as a ghost — position yourself anywhere.
-              </p>
-            </div>
-          )}
-
           {/* Steps */}
           <div className="flex flex-col gap-0">
             <p className="font-sans text-xs tracking-[0.14em] uppercase mb-5" style={{ color: BODY }}>
