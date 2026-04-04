@@ -96,11 +96,10 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
             {/* Headline */}
             <h1
-              className="font-typewriter"
+              className="font-typewriter font-semibold"
               style={{
                 color: "#1A1713",
                 fontSize: "clamp(28px, 3.8vw, 52px)",
-                fontWeight: "400",
                 lineHeight: "115%",
                 letterSpacing: "-0.01em",
               }}
@@ -122,7 +121,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
             <div className="flex flex-col gap-2.5" style={{ width: "min(100%, 360px)" }}>
               <button
                 onClick={onOpen}
-                className="font-typewriter"
+                className="font-typewriter font-semibold"
                 onMouseEnter={e => { e.currentTarget.style.background = "#FFDD00"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "#F2C94C"; }}
                 style={{
@@ -132,11 +131,9 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                   padding: "clamp(12px, 1.4vw, 16px) clamp(20px, 2vw, 32px)",
                   fontSize: "clamp(15px, 1.6vw, 19px)",
                   lineHeight: "1",
-                  fontFamily: "inherit",
                   borderRadius: "8px",
                   cursor: "pointer",
                   letterSpacing: "-0.02em",
-                  fontWeight: "500",
                   width: "100%",
                   display: "flex",
                   alignItems: "center",

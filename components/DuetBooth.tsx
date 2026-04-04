@@ -363,7 +363,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
               <div className="fade-up" style={{ animationDelay: "150ms" }}>
                 <h2
-                  className="font-typewriter leading-tight"
+                  className="font-typewriter font-semibold leading-tight"
                   style={{ color: "#1A1713", fontSize: "clamp(2rem, 4vw, 3rem)" }}
                 >
                   Your shots{" "}
@@ -475,7 +475,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
               <div className="fade-up" style={{ animationDelay: "150ms" }}>
                 <h2
-                  className="font-typewriter leading-tight"
+                  className="font-typewriter font-semibold leading-tight"
                   style={{ color: "#1A1713", fontSize: "clamp(2rem, 4vw, 3rem)" }}
                 >
                   {role === "viewer"
