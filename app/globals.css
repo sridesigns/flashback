@@ -138,6 +138,17 @@ body {
   background: #FDFCF7;
 }
 
+/* Thumbnail slots: fixed compact height on mobile, portrait ratio on desktop */
+.thumb-slot {
+  height: 72px;
+}
+@media (min-width: 768px) {
+  .thumb-slot {
+    height: auto;
+    aspect-ratio: 3 / 4;
+  }
+}
+
 /* Smooth transitions */
 .page-transition {
   animation: fadeIn 0.4s ease-out;

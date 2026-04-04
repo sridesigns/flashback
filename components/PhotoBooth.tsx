@@ -246,22 +246,27 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
   // ── Camera view ──────────────────────────────────────────────────────────────
   return (
-    <div className="w-full min-h-screen flex flex-col" style={{ background: CREAM }}>
+    // Lock to viewport — no scroll on mobile
+    <div
+      className="w-full flex flex-col overflow-hidden"
+      style={{ height: "100dvh", background: CREAM }}
+    >
       <GrainTexture id="paper-booth" />
       <BoothHeader onBack={onHome} />
 
-      {/* Two-column body */}
-      <div className="flex-1 flex flex-col md:flex-row relative z-10">
+      {/* Two-column body — min-h-0 so flex children can shrink below content size */}
+      <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-0">
 
         {/* ── Left: fluid camera column ──────────────────────────────────── */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6 py-8">
+        <div className="flex-1 flex flex-col items-center min-h-0 gap-3 px-4 pt-3 pb-4 md:gap-5 md:justify-center md:px-6 md:py-8">
 
-          {/* Viewfinder */}
+          {/* Viewfinder
+              Mobile: flex-1 + min-h-0 → fills all remaining space, no fixed ratio
+              Desktop: flex-none + aspect-[3/4] → fixed portrait ratio */}
           <div
-            className="relative w-full mx-auto overflow-hidden rounded-2xl"
+            className="relative w-full mx-auto overflow-hidden rounded-2xl flex-1 min-h-0 md:flex-none md:aspect-[3/4]"
             style={{
               maxWidth: "min(420px, 100%)",
-              aspectRatio: "3/4",
               background: "#E8E4DE",
               border: `1.5px solid ${BRAND_A(0.2)}`,
               boxShadow: `0 6px 32px ${BRAND_A(0.08)}`,
@@ -318,24 +323,21 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             {/* Flash */}
             {showFlash && <div className="absolute inset-0 bg-white z-20 animate-flash pointer-events-none" />}
 
-            {/* Corner brackets — brand color low opacity */}
+            {/* Corner brackets */}
             <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 pointer-events-none rounded-tl-sm" style={{ borderColor: BRAND_A(0.35) }} />
             <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 pointer-events-none rounded-tr-sm" style={{ borderColor: BRAND_A(0.35) }} />
             <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 pointer-events-none rounded-bl-sm" style={{ borderColor: BRAND_A(0.35) }} />
             <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 pointer-events-none rounded-br-sm" style={{ borderColor: BRAND_A(0.35) }} />
           </div>
 
-          {/* 4 frame thumbnail slots */}
-          <div className="flex gap-2.5 w-full mx-auto" style={{ maxWidth: "min(420px, 100%)" }}>
+          {/* 4 frame thumbnail slots — compact fixed height on mobile, portrait on desktop */}
+          <div className="flex gap-2 w-full mx-auto shrink-0" style={{ maxWidth: "min(420px, 100%)" }}>
             {Array.from({ length: TOTAL_PHOTOS }).map((_, i) => (
               <div
                 key={i}
-                className="relative overflow-hidden rounded-lg flex items-center justify-center transition-all duration-300 flex-1"
+                className="thumb-slot relative overflow-hidden rounded-lg flex items-center justify-center transition-all duration-300 flex-1"
                 style={{
-                  aspectRatio: "3/4",
-                  border: photos[i]
-                    ? `2px solid ${BRAND}`
-                    : `1.5px dashed ${BRAND_A(0.35)}`,
+                  border: photos[i] ? `2px solid ${BRAND}` : `1.5px dashed ${BRAND_A(0.35)}`,
                   background: photos[i] ? "transparent" : BRAND_A(0.06),
                 }}
               >
@@ -354,14 +356,17 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
             ))}
           </div>
 
-          {/* Controls row */}
-          <div className="flex items-center justify-center gap-6 w-full mx-auto" style={{ maxWidth: "min(420px, 100%)" }}>
-            {state === "preview" && (
-              <>
-                {/* Retake */}
+          {/* Controls — 3-column grid so shutter is always dead-centre */}
+          <div
+            className="grid grid-cols-3 items-center w-full mx-auto shrink-0"
+            style={{ maxWidth: "min(420px, 100%)" }}
+          >
+            {/* Col 1: Retake / Flip */}
+            <div className="flex justify-start">
+              {state === "preview" && (
                 <button
                   onClick={photos.length > 0 ? handleRetake : flipCamera}
-                  className="font-sans text-sm font-medium py-2.5 px-5 rounded-xl flex items-center gap-2 transition-opacity hover:opacity-80"
+                  className="font-sans text-sm font-medium py-2.5 px-4 rounded-xl flex items-center gap-1.5 transition-opacity hover:opacity-80"
                   style={{ background: "#C8B0A0", color: "#1A1713" }}
                   title={photos.length > 0 ? "Retake" : "Flip camera"}
                 >
@@ -370,33 +375,42 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                     : "Retake"
                   }
                 </button>
+              )}
+            </div>
 
-                {/* Shutter */}
+            {/* Col 2: Shutter — always centred */}
+            <div className="flex justify-center">
+              {state === "preview" && (
                 <button
                   onClick={handleStart}
-                  className="w-[68px] h-[68px] rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
+                  className="w-[64px] h-[64px] rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0"
                   style={{ background: BRAND, boxShadow: `0 4px 16px ${BRAND_A(0.4)}` }}
                   title="Start Shoot"
                 />
-              </>
-            )}
-            {state === "countdown" && (
-              <p className="text-center font-sans text-sm py-3" style={{ color: BODY }}>
-                Pose {currentShot + 1} of {TOTAL_PHOTOS} — get ready…
-              </p>
-            )}
-            {(state === "permission" || state === "idle") && <div className="h-[68px]" />}
+              )}
+              {state === "countdown" && (
+                <p className="text-center font-sans text-xs py-3" style={{ color: BODY }}>
+                  Pose {currentShot + 1} of {TOTAL_PHOTOS}
+                </p>
+              )}
+              {(state === "permission" || state === "idle") && <div className="w-[64px] h-[64px]" />}
+            </div>
+
+            {/* Col 3: reserved (flip on multi-camera + preview) */}
+            <div className="flex justify-end">
+              {state === "preview" && hasMultipleCameras && photos.length > 0 && (
+                <button
+                  onClick={flipCamera}
+                  className="font-sans text-xs font-medium p-2.5 rounded-xl transition-opacity hover:opacity-70"
+                  style={{ color: BODY }}
+                  title="Flip camera"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Mobile-only stats */}
-          <div className="md:hidden w-full flex items-center justify-center gap-6 pt-4" style={{ borderTop: `1px solid ${BRAND_A(0.1)}` }}>
-            {HOW_IT_WORKS.map(item => (
-              <div key={item.stat} className="text-center">
-                <p className="font-typewriter text-lg font-semibold" style={{ color: BRAND, fontStyle: "italic" }}>{item.stat}</p>
-                <p className="font-sans text-[10px] mt-0.5 leading-tight" style={{ color: BODY }}>{item.detail}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* ── Right: fixed 380px sidebar (desktop only) ──────────────────── */}
@@ -404,12 +418,9 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           className="hidden md:flex flex-col gap-8 py-10 px-10 shrink-0"
           style={{ width: "380px", borderLeft: `1px solid ${BRAND_A(0.1)}` }}
         >
-          {/* How it works label */}
           <p className="font-sans text-xs tracking-[0.14em] uppercase" style={{ color: BODY }}>
             How it works
           </p>
-
-          {/* Stats */}
           <div className="flex flex-col gap-0">
             {HOW_IT_WORKS.map((item, idx) => (
               <div
@@ -426,8 +437,6 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               </div>
             ))}
           </div>
-
-          {/* Privacy note */}
           <div className="flex flex-col gap-1.5">
             <p className="font-sans text-xs font-medium uppercase tracking-[0.1em]" style={{ color: BRAND }}>
               Privacy note
