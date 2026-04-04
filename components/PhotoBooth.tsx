@@ -240,11 +240,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 <button
                   onClick={handleHome}
                   className="font-sans font-medium text-sm py-3 px-5 rounded-full flex-1 transition-opacity hover:opacity-80"
-                  style={{
-                    background: BRAND_A(0.08),
-                    color:      BRAND,
-                    border:     `1px solid ${BRAND_A(0.2)}`,
-                  }}
+                  style={{ background: BRAND, color: CREAM }}
                 >
                   Home
                 </button>
@@ -317,7 +313,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               {/* Privacy note */}
               <p
                 className="fade-up font-sans text-xs leading-relaxed"
-                style={{ color: BRAND_A(0.38), animationDelay: "610ms" }}
+                style={{ color: "#2D6A4F", animationDelay: "610ms" }}
               >
                 Your photos never leave your device.
               </p>

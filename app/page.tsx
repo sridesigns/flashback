@@ -135,7 +135,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
                   fontFamily: "inherit",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  letterSpacing: "0.01em",
+                  letterSpacing: "-0.02em",
                   fontWeight: "500",
                   width: "100%",
                   display: "flex",
