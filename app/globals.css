@@ -163,6 +163,19 @@ body {
   filter: grayscale(100%) contrast(1.15) brightness(0.95);
 }
 
+/* ─── Done-screen layout ────────────────────────────────────────────────── */
+
+/* Mobile: natural height (scrollable). Desktop: locked to viewport. */
+.done-layout {
+  min-height: 100dvh;
+}
+@media (min-width: 768px) {
+  .done-layout {
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
 /* ─── Done-screen animations ─────────────────────────────────────────────── */
 
 /* Film strip enters tilted at -6deg, drifting up */

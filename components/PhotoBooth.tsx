@@ -165,62 +165,59 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   // ── Done screen ──────────────────────────────────────────────────────────────
   if (state === "done" && photos.length === TOTAL_PHOTOS) {
     return (
-      <div className="w-full flex flex-col" style={{ minHeight: "100dvh", background: CREAM }}>
+      <div className="w-full flex flex-col done-layout" style={{ background: CREAM }}>
         <GrainTexture id="paper-done" />
         <BoothHeader onBack={handleHome} />
 
         {/*
-          Two-column layout:
-          • Mobile (default):  flex-col — strip centred at top, actions below
-          • Desktop (md+):     flex-row — strip fills left, 420px actions sidebar right
+          Equal-width two-column layout (50/50 like home):
+          • Mobile (default):  flex-col — scrollable
+          • Desktop (md+):     flex-row, each 50%, no scroll
         */}
-        <div className="flex-1 w-full flex flex-col md:flex-row relative z-10">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto md:overflow-hidden">
 
-          {/* ── Left: film strip column ── */}
+          {/* ── Left: film strip ── */}
           <div
-            className="flex justify-center items-start md:flex-1 overflow-visible"
-            style={{ padding: "3.5rem 2.5rem 1.5rem" }}
+            className="md:w-1/2 flex items-center justify-center overflow-visible"
+            style={{ padding: "2.5rem 2rem", flexShrink: 0 }}
           >
-            {/*
-              strip-enter animation encodes rotate(-6deg) in both keyframe endpoints
-              + animation-fill-mode: both — holds the tilt after the animation.
-              No separate static transform needed.
-            */}
-            <div className="strip-enter" style={{ flexShrink: 0 }}>
+            <div className="strip-enter">
               <PhotoStrip ref={stripRef} photos={photos} />
             </div>
           </div>
 
-          {/* ── Right: actions sidebar — full-width mobile, 420px desktop ── */}
+          {/* ── Right: actions (50% on desktop, full-width on mobile) ── */}
           <div
-            className="flex flex-col px-6 pb-12 pt-2 md:py-14 md:px-10 md:shrink-0 md:w-[420px]"
-            style={{ gap: "20px" }}
+            className="md:w-1/2 flex flex-col justify-center px-8 md:px-12 pb-12 pt-4 md:pt-0 md:pb-0"
+            style={{ gap: "20px", flexShrink: 0 }}
           >
-            <div style={{ display: "contents" }}>
 
               {/* Headline */}
               <div className="fade-up" style={{ animationDelay: "150ms" }}>
                 <h2
                   className="font-typewriter leading-tight"
                   style={{
-                    color:      BRAND,
-                    fontStyle:  "italic",
-                    fontSize:   "clamp(2rem, 6vw, 3.25rem)",
+                    color:    "#1A1713",
+                    fontSize: "clamp(2rem, 4.5vw, 3.25rem)",
                   }}
                 >
-                  Your strip<br />is ready.
+                  Your{" "}
+                  <em style={{ color: BRAND, fontStyle: "italic" }}>strip</em>
+                  <br />is ready.
                 </h2>
                 <p className="font-sans text-sm mt-2 leading-relaxed" style={{ color: BODY }}>
                   Four poses. One memory.
                 </p>
               </div>
 
-              {/* Primary CTA */}
+              {/* Primary CTA — yellow like home */}
               <div className="fade-up" style={{ animationDelay: "250ms" }}>
                 <button
                   onClick={() => stripRef.current?.download()}
-                  className="font-sans font-semibold text-sm py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center transition-opacity hover:opacity-85"
-                  style={{ background: BRAND, color: CREAM }}
+                  className="font-typewriter font-medium text-sm py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center"
+                  style={{ background: "#F2C94C", color: "#1A1713" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#FFDD00")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "#F2C94C")}
                 >
                   <DownloadIcon /> Save Photo Strip
                 </button>
@@ -322,9 +319,8 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 Your photos never leave your device.
               </p>
 
-            </div>
-          </div>
-        </div>
+          </div>{/* end right column */}
+        </div>{/* end main flex */}
 
         <canvas ref={canvasRef} className="hidden" />
       </div>

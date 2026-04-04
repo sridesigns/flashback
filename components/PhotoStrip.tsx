@@ -90,7 +90,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
       const padding   = 16;
       const gap       = 8;
       const headerH   = 60;
-      const footerH   = 44;
+      const footerH   = padding;     // even bottom padding — no URL text
       const sidebarW  = 28;          // sprocket gutter width each side
       const holeW     = 6;
       const holeH     = 9;
@@ -218,29 +218,8 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
         ctx.textBaseline = "alphabetic";
       }
 
-      // ── Footer ───────────────────────────────────────────────────────────
-      const fdY = H - footerH + 4;
-      ctx.strokeStyle = "rgba(201,168,76,0.14)";
-      ctx.lineWidth   = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(sidebarW + padding, fdY);
-      ctx.lineTo(W - sidebarW - padding, fdY);
-      ctx.stroke();
-
+      // ── Footer — even bottom padding, no URL text ────────────────────────
       const now = new Date();
-      ctx.fillStyle    = "rgba(120,75,25,0.38)";
-      ctx.font         = `9px Arial, sans-serif`;
-      ctx.letterSpacing = "2px";
-      ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 22);
-      ctx.letterSpacing = "0px";
-
-      ctx.fillStyle = "rgba(80,45,12,0.28)";
-      ctx.font      = `8px monospace`;
-      ctx.fillText(
-        now.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" }).toUpperCase(),
-        W / 2,
-        H - footerH + 36,
-      );
 
       // ── Download ─────────────────────────────────────────────────────────
       const n        = nextStripNumber();
@@ -284,7 +263,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
           ref={stripRef}
           style={{
             position:     "relative",
-            width:        "clamp(175px, 44vw, 260px)",
+            width:        "clamp(130px, 14vw, 150px)",
             background:   FILM_BASE,
             borderRadius: "3px",
             overflow:     "hidden",
@@ -435,27 +414,8 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
               ))}
             </div>
 
-            {/* Footer */}
-            <div
-              style={{
-                textAlign:  "center",
-                padding:    "8px 4px 10px",
-                borderTop:  "0.5px solid rgba(201,168,76,0.12)",
-              }}
-            >
-              <p
-                style={{
-                  fontFamily:    "monospace",
-                  color:         "rgba(120,75,25,0.32)",
-                  fontSize:      "clamp(5.5px, 1.3vw, 7px)",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  margin:        0,
-                }}
-              >
-                citofoto.vercel.app
-              </p>
-            </div>
+            {/* Even bottom padding — no URL text */}
+            <div style={{ height: "10px" }} />
 
           </div>
         </div>
