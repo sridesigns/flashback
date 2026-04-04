@@ -20,7 +20,7 @@ const config: Config = {
       },
       fontFamily: {
         serif: ["var(--font-fraunces)", "Georgia", "serif"],
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["'SF Mono'", "SFMono-Regular", "ui-monospace", "var(--font-inter)", "Menlo", "Consolas", "monospace"],
         typewriter: ["var(--font-typewriter)", "Georgia", "serif"],
         handwritten: ["var(--font-caveat)", "cursive"],
       },

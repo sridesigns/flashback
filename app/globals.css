@@ -39,7 +39,7 @@ body {
 body {
   background-color: #FDF6EB;
   color: #54575C;
-  font-family: var(--font-inter);
+  font-family: "SF Mono", SFMono-Regular, ui-monospace, var(--font-inter), Menlo, Consolas, monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

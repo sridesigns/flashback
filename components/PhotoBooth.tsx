@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Copy } from "lucide-react";
 import PhotoStrip, { PhotoStripHandle } from "./PhotoStrip";
 import { captureFromVideo, compressForUrl } from "@/lib/photoUtils";
 import { uploadBlob } from "@/lib/blobStore";
@@ -188,9 +188,11 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
 
           {/* ── Right: actions (50% on desktop, full-width on mobile) ── */}
           <div
-            className="md:w-1/2 flex flex-col justify-center px-8 md:px-12 pb-12 pt-4 md:pt-0 md:pb-0"
-            style={{ gap: "20px", flexShrink: 0 }}
+            className="md:w-1/2 flex flex-col justify-center items-start px-8 md:px-12 pb-12 pt-4 md:pt-0 md:pb-0"
+            style={{ flexShrink: 0 }}
           >
+            {/* constrain content to a readable max-width, left-aligned */}
+            <div className="w-full" style={{ maxWidth: "320px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
               {/* Headline */}
               <div className="fade-up" style={{ animationDelay: "150ms" }}>
@@ -198,12 +200,12 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                   className="font-typewriter leading-tight"
                   style={{
                     color:    "#1A1713",
-                    fontSize: "clamp(2rem, 4.5vw, 3.25rem)",
+                    fontSize: "clamp(2rem, 4vw, 3rem)",
                   }}
                 >
                   Your{" "}
                   <em style={{ color: BRAND, fontStyle: "italic" }}>strip</em>
-                  <br />is ready.
+                  {" "}is ready.
                 </h2>
                 <p className="font-sans text-sm mt-2 leading-relaxed" style={{ color: BODY }}>
                   Four poses. One memory.
@@ -299,13 +301,14 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2500);
                       }}
-                      className="font-sans font-medium text-sm py-3 px-6 rounded-full w-full transition-opacity hover:opacity-80"
+                      className="font-sans font-medium text-sm py-2.5 px-5 rounded-full flex items-center gap-2 transition-opacity hover:opacity-80 self-start"
                       style={{
                         background: copied ? "#1A1713" : "#C8B0A0",
                         color:      copied ? CREAM    : "#1A1713",
                       }}
                     >
-                      {copied ? "✓ Copied!" : "Copy Pose & Pass Link"}
+                      {copied ? "✓ Copied!" : "Copy Link"}
+                      {!copied && <Copy size={13} />}
                     </button>
                   </>
                 ) : null}
@@ -319,6 +322,7 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
                 Your photos never leave your device.
               </p>
 
+            </div>{/* end max-width inner wrapper */}
           </div>{/* end right column */}
         </div>{/* end main flex */}
 
