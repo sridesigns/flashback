@@ -10,47 +10,56 @@ export interface PhotoStripHandle {
   download: () => void;
 }
 
-const TOTAL_PHOTOS = 4;
+const TOTAL_PHOTOS   = 4;
+const FILM_BASE      = "#1E140A";
+const SPROCKET_COLOR = "#130D06";
+const GOLD           = "#C9A84C";
 
-// ─── Canvas helpers ───────────────────────────────────────────────────────────
+// Per-frame grain texture — feTurbulence 0.75/4oct, greyscale, data-URI tile
+const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E")`;
 
-/** Draw an image into (x,y,w,h) with object-fit:cover — no stretching. */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
+}
+
+function nextStripNumber(): number {
+  try {
+    const key = "citofoto_strip_count";
+    const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
+    localStorage.setItem(key, String(n));
+    return n;
+  } catch {
+    return Math.floor(Math.random() * 900) + 100;
+  }
+}
+
+/** object-fit: cover for canvas drawImage */
 function drawImageCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number
+  x: number, y: number, w: number, h: number,
 ) {
-  const imgRatio = img.naturalWidth / img.naturalHeight;
-  const targetRatio = w / h;
-
+  const ir = img.naturalWidth / img.naturalHeight;
+  const tr = w / h;
   let sx: number, sy: number, sw: number, sh: number;
-  if (imgRatio > targetRatio) {
-    // Source is wider — crop left/right
-    sh = img.naturalHeight;
-    sw = sh * targetRatio;
-    sx = (img.naturalWidth - sw) / 2;
-    sy = 0;
+  if (ir > tr) {
+    sh = img.naturalHeight; sw = sh * tr;
+    sx = (img.naturalWidth - sw) / 2; sy = 0;
   } else {
-    // Source is taller — crop top/bottom
-    sw = img.naturalWidth;
-    sh = sw / targetRatio;
-    sx = 0;
-    sy = (img.naturalHeight - sh) / 2;
+    sw = img.naturalWidth; sh = sw / tr;
+    sx = 0; sy = (img.naturalHeight - sh) / 2;
   }
-
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
+  x: number, y: number, w: number, h: number, r: number,
 ) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -65,299 +74,394 @@ function roundRect(
   ctx.closePath();
 }
 
-/** localStorage-backed counter so each saved strip gets a unique number. */
-function nextStripNumber(): number {
-  try {
-    const key = "citofoto_strip_count";
-    const n = parseInt(localStorage.getItem(key) ?? "0", 10) + 1;
-    localStorage.setItem(key, String(n));
-    return n;
-  } catch {
-    return Math.floor(Math.random() * 900) + 100;
-  }
-}
-
-/** Format: dd.mm.yy */
-function formatDate(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}.${mm}.${yy}`;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(function PhotoStrip({ photos }, ref) {
-  const stripRef = useRef<HTMLDivElement>(null);
+const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
+  function PhotoStrip({ photos }, ref) {
+    const stripRef = useRef<HTMLDivElement>(null);
+    const today    = new Date();
+    const dateStr  = formatDate(today);
 
-  const handleDownload = useCallback(async () => {
-    // ── Layout constants (logical pixels) ──────────────────────────────────
-    const SCALE        = 2;          // render at 2× for crisp output
-    const photoW       = 300;        // logical width per photo
-    const photoH       = 400;        // 3:4 portrait photo-booth ratio
-    const padding      = 20;
-    const gap          = 12;
-    const headerH      = 64;
-    const footerH      = 48;
-    const sidebarW     = 32;         // film-hole gutter on each side
-    const holeW        = 14;
-    const holeH        = 10;
-    const holeGap      = 22;
-    const borderW      = 4;          // dark frame around each photo
+    // ── Canvas download ──────────────────────────────────────────────────────
+    const handleDownload = useCallback(async () => {
+      const SCALE     = 2;
+      const photoW    = 300;
+      const photoH    = 400;
+      const padding   = 16;
+      const gap       = 8;
+      const headerH   = 60;
+      const footerH   = 44;
+      const sidebarW  = 28;          // sprocket gutter width each side
+      const holeW     = 6;
+      const holeH     = 9;
+      const holesN    = 5;
+      const borderW   = 3;
 
-    const logicalW = sidebarW * 2 + padding * 2 + photoW;
-    const logicalH =
-      headerH +
-      padding +
-      TOTAL_PHOTOS * photoH +
-      (TOTAL_PHOTOS - 1) * gap +
-      padding +
-      footerH;
+      const logicalW = sidebarW * 2 + padding * 2 + photoW;
+      const logicalH =
+        headerH +
+        padding +
+        TOTAL_PHOTOS * photoH +
+        (TOTAL_PHOTOS - 1) * gap +
+        padding +
+        footerH;
 
-    const canvas  = document.createElement("canvas");
-    canvas.width  = logicalW  * SCALE;
-    canvas.height = logicalH  * SCALE;
+      const canvas   = document.createElement("canvas");
+      canvas.width   = logicalW * SCALE;
+      canvas.height  = logicalH * SCALE;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.scale(SCALE, SCALE);
 
-    // Scale all draw calls so we work in logical coords
-    ctx.scale(SCALE, SCALE);
+      const W = logicalW;
+      const H = logicalH;
 
-    const W = logicalW;
-    const H = logicalH;
+      // ── Film base ────────────────────────────────────────────────────────
+      ctx.fillStyle = FILM_BASE;
+      ctx.fillRect(0, 0, W, H);
 
-    // ── Background ─────────────────────────────────────────────────────────
-    ctx.fillStyle = "#181008";
-    ctx.fillRect(0, 0, W, H);
+      // Subtle warmth gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0,   "rgba(80,30,8,0.14)");
+      bgGrad.addColorStop(0.5, "rgba(0,0,0,0)");
+      bgGrad.addColorStop(1,   "rgba(0,0,0,0.12)");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
 
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, "rgba(90,35,10,0.18)");
-    bgGrad.addColorStop(0.5, "rgba(0,0,0,0.0)");
-    bgGrad.addColorStop(1, "rgba(0,0,0,0.14)");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
+      // ── Sprocket holes — 5 per side, 6×9 px, #130D06 ───────────────────
+      const holePad  = 16;
+      const holeStep = (H - holePad * 2 - holeH) / (holesN - 1);
+      for (let i = 0; i < holesN; i++) {
+        const hy  = holePad + i * holeStep;
+        const hxL = (sidebarW - holeW) / 2;
+        const hxR = W - sidebarW + (sidebarW - holeW) / 2;
 
-    // ── Film holes ─────────────────────────────────────────────────────────
-    const holesCount = Math.floor(H / holeGap);
-    for (let i = 0; i < holesCount; i++) {
-      const hy = i * holeGap + holeGap / 2 - holeH / 2;
-      const hxL = (sidebarW - holeW) / 2;
-      const hxR = W - sidebarW + (sidebarW - holeW) / 2;
+        ctx.fillStyle = SPROCKET_COLOR;
+        roundRect(ctx, hxL, hy, holeW, holeH, 1.5);
+        ctx.fill();
+        roundRect(ctx, hxR, hy, holeW, holeH, 1.5);
+        ctx.fill();
+      }
 
-      ctx.fillStyle = "#0a0600";
-      roundRect(ctx, hxL, hy, holeW, holeH, 2);
-      ctx.fill();
-      roundRect(ctx, hxR, hy, holeW, holeH, 2);
-      ctx.fill();
+      // ── Header ───────────────────────────────────────────────────────────
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "alphabetic";
 
-      // Inner highlight to give depth
-      ctx.fillStyle = "rgba(255,255,255,0.04)";
-      roundRect(ctx, hxL + 1, hy + 1, holeW - 2, 3, 1);
-      ctx.fill();
-      roundRect(ctx, hxR + 1, hy + 1, holeW - 2, 3, 1);
-      ctx.fill();
-    }
+      ctx.fillStyle = GOLD;
+      ctx.font      = `bold 20px Georgia, "Times New Roman", serif`;
+      ctx.fillText("CitoFoto", W / 2, padding + 20);
 
-    // ── Sidebar edge lines ─────────────────────────────────────────────────
-    ctx.strokeStyle = "rgba(255,255,255,0.07)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(sidebarW, 0); ctx.lineTo(sidebarW, H);
-    ctx.moveTo(W - sidebarW, 0); ctx.lineTo(W - sidebarW, H);
-    ctx.stroke();
+      ctx.fillStyle    = "rgba(180,120,55,0.45)";
+      ctx.font         = `500 9px Arial, sans-serif`;
+      ctx.letterSpacing = "3px";
+      ctx.fillText(dateStr.toUpperCase(), W / 2, padding + 38);
+      ctx.letterSpacing = "0px";
 
-    // ── Header ─────────────────────────────────────────────────────────────
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-
-    ctx.fillStyle = "#C9A84C";
-    ctx.font = `bold 22px Georgia, "Times New Roman", serif`;
-    ctx.fillText("CitoFoto", W / 2, padding + 22);
-
-    ctx.fillStyle = "#7a5535";
-    ctx.font = `600 10px Arial, sans-serif`;
-    ctx.letterSpacing = "4px";
-    ctx.fillText("RETRO PHOTO BOOTH", W / 2, padding + 40);
-    ctx.letterSpacing = "0px";
-
-    // Thin gold divider
-    const divY = headerH - 2;
-    ctx.strokeStyle = "rgba(201,168,76,0.25)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(sidebarW + padding, divY);
-    ctx.lineTo(W - sidebarW - padding, divY);
-    ctx.stroke();
-
-    // ── Photos ─────────────────────────────────────────────────────────────
-    const loadImage = (src: string): Promise<HTMLImageElement> =>
-      new Promise((res, rej) => {
-        const img = new Image();
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = src;
-      });
-
-    let images: HTMLImageElement[];
-    try {
-      images = await Promise.all(photos.map(loadImage));
-    } catch (e) {
-      console.error("Failed to load images for download", e);
-      return;
-    }
-
-    for (let i = 0; i < images.length; i++) {
-      const px = sidebarW + padding;
-      const py = headerH + padding + i * (photoH + gap);
-
-      // Dark frame
-      ctx.fillStyle = "#0e0805";
-      ctx.fillRect(px - borderW, py - borderW, photoW + borderW * 2, photoH + borderW * 2);
-
-      // Photo — cover crop so aspect ratio is never distorted
-      ctx.save();
+      // Thin divider
+      ctx.strokeStyle = `rgba(201,168,76,0.18)`;
+      ctx.lineWidth   = 0.5;
       ctx.beginPath();
-      ctx.rect(px, py, photoW, photoH);
-      ctx.clip();
-      drawImageCover(ctx, images[i], px, py, photoW, photoH);
-      ctx.restore();
+      ctx.moveTo(sidebarW + padding, headerH - 4);
+      ctx.lineTo(W - sidebarW - padding, headerH - 4);
+      ctx.stroke();
 
-      // Subtle inner vignette over the photo
-      const vigGrad = ctx.createRadialGradient(
-        px + photoW / 2, py + photoH / 2, photoH * 0.3,
-        px + photoW / 2, py + photoH / 2, photoH * 0.85
+      // ── Photos ───────────────────────────────────────────────────────────
+      const loadImage = (src: string): Promise<HTMLImageElement> =>
+        new Promise((res, rej) => {
+          const img = new Image();
+          img.onload  = () => res(img);
+          img.onerror = rej;
+          img.src     = src;
+        });
+
+      let images: HTMLImageElement[];
+      try { images = await Promise.all(photos.map(loadImage)); }
+      catch (e) { console.error("Failed to load images", e); return; }
+
+      for (let i = 0; i < images.length; i++) {
+        const px = sidebarW + padding;
+        const py = headerH + padding + i * (photoH + gap);
+
+        // Dark border frame
+        ctx.fillStyle = "#0e0805";
+        ctx.fillRect(px - borderW, py - borderW, photoW + borderW * 2, photoH + borderW * 2);
+
+        // Photo (cover-cropped)
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, photoW, photoH);
+        ctx.clip();
+        drawImageCover(ctx, images[i], px, py, photoW, photoH);
+        ctx.restore();
+
+        // Per-frame vignette: transparent 40% → rgba(0,0,0,0.55) 100%
+        const vig = ctx.createRadialGradient(
+          px + photoW / 2, py + photoH / 2, photoH * 0.25,
+          px + photoW / 2, py + photoH / 2, photoH * 0.82,
+        );
+        vig.addColorStop(0, "rgba(0,0,0,0)");
+        vig.addColorStop(1, "rgba(0,0,0,0.55)");
+        ctx.fillStyle = vig;
+        ctx.fillRect(px, py, photoW, photoH);
+
+        // Frame number badge
+        ctx.fillStyle    = "rgba(0,0,0,0.55)";
+        roundRect(ctx, px + 4, py + 4, 18, 15, 2);
+        ctx.fill();
+        ctx.fillStyle    = GOLD;
+        ctx.font         = `bold 9px monospace`;
+        ctx.textAlign    = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${i + 1}`, px + 9, py + 12);
+        ctx.textAlign    = "center";
+        ctx.textBaseline = "alphabetic";
+      }
+
+      // ── Footer ───────────────────────────────────────────────────────────
+      const fdY = H - footerH + 4;
+      ctx.strokeStyle = "rgba(201,168,76,0.14)";
+      ctx.lineWidth   = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(sidebarW + padding, fdY);
+      ctx.lineTo(W - sidebarW - padding, fdY);
+      ctx.stroke();
+
+      const now = new Date();
+      ctx.fillStyle    = "rgba(120,75,25,0.38)";
+      ctx.font         = `9px Arial, sans-serif`;
+      ctx.letterSpacing = "2px";
+      ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 22);
+      ctx.letterSpacing = "0px";
+
+      ctx.fillStyle = "rgba(80,45,12,0.28)";
+      ctx.font      = `8px monospace`;
+      ctx.fillText(
+        now.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" }).toUpperCase(),
+        W / 2,
+        H - footerH + 36,
       );
-      vigGrad.addColorStop(0, "rgba(0,0,0,0)");
-      vigGrad.addColorStop(1, "rgba(0,0,0,0.35)");
-      ctx.fillStyle = vigGrad;
-      ctx.fillRect(px, py, photoW, photoH);
 
-      // Photo number badge
-      ctx.fillStyle = "rgba(0,0,0,0.60)";
-      roundRect(ctx, px + 5, py + 5, 20, 16, 2);
-      ctx.fill();
-      ctx.fillStyle = "#C9A84C";
-      ctx.font = `bold 10px monospace`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`${i + 1}`, px + 10, py + 13);
-    }
+      // ── Download ─────────────────────────────────────────────────────────
+      const n        = nextStripNumber();
+      const filename = `CitoFoto_${n}_${formatDate(now)}.jpg`;
+      const link     = document.createElement("a");
+      link.download  = filename;
+      link.href      = canvas.toDataURL("image/jpeg", 0.95);
+      link.click();
+    }, [photos]);
 
-    // ── Footer ─────────────────────────────────────────────────────────────
-    const footerDivY = H - footerH + 2;
-    ctx.strokeStyle = "rgba(201,168,76,0.20)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(sidebarW + padding, footerDivY);
-    ctx.lineTo(W - sidebarW - padding, footerDivY);
-    ctx.stroke();
+    useImperativeHandle(ref, () => ({ download: handleDownload }), [handleDownload]);
 
-    const now = new Date();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
+    // ── JSX ─────────────────────────────────────────────────────────────────
+    return (
+      <>
+        {/*
+          SVG filter defs — hidden, scoped to document.
+          #bw-film: weighted luminosity matrix (more green, less blue, warm shadows).
+        */}
+        <svg
+          aria-hidden="true"
+          style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+        >
+          <defs>
+            <filter id="bw-film" colorInterpolationFilters="sRGB">
+              <feColorMatrix
+                type="matrix"
+                values={[
+                  "0.28 0.58 0.14 0 0.02",
+                  "0.22 0.58 0.14 0 -0.02",
+                  "0.18 0.50 0.10 0 -0.04",
+                  "0    0    0    1 0",
+                ].join("  ")}
+              />
+            </filter>
+          </defs>
+        </svg>
 
-    ctx.fillStyle = "#6b4828";
-    ctx.font = `10px Arial, sans-serif`;
-    ctx.letterSpacing = "2px";
-    ctx.fillText("citofoto.vercel.app", W / 2, H - footerH + 20);
-    ctx.letterSpacing = "0px";
-
-    ctx.fillStyle = "#3d2810";
-    ctx.font = `9px monospace`;
-    ctx.fillText(
-      now.toLocaleDateString("en-GB", { year: "numeric", month: "short", day: "numeric" }).toUpperCase(),
-      W / 2,
-      H - footerH + 36
-    );
-
-    // ── Download ───────────────────────────────────────────────────────────
-    const n    = nextStripNumber();
-    const date = formatDate(now);
-    const filename = `CitoFoto_${n}_${date}.jpg`;
-
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.click();
-  }, [photos]);
-
-  // Expose download() to parent via ref
-  useImperativeHandle(ref, () => ({ download: handleDownload }), [handleDownload]);
-
-  // ── JSX ────────────────────────────────────────────────────────────────────
-  return (
-    <div className="flex flex-col items-center w-full">
-      {/* Strip display */}
-      <div
-        ref={stripRef}
-        className="relative bg-film-black rounded-sm shadow-2xl overflow-hidden"
-        style={{ width: "min(180px, 50vw)" }}
-      >
-        {/* Film holes — left */}
-        <div className="absolute left-0 top-0 bottom-0 w-5 flex flex-col items-center justify-around py-3 z-10">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="film-hole" />
+        {/* Film strip shell */}
+        <div
+          ref={stripRef}
+          style={{
+            position:     "relative",
+            width:        "clamp(175px, 44vw, 260px)",
+            background:   FILM_BASE,
+            borderRadius: "3px",
+            overflow:     "hidden",
+            boxShadow:    "0 24px 64px rgba(0,0,0,0.72), 0 8px 20px rgba(0,0,0,0.45)",
+            flexShrink:   0,
+          }}
+        >
+          {/* ── Sprockets ── */}
+          {(["left", "right"] as const).map(side => (
+            <div
+              key={side}
+              style={{
+                position:       "absolute",
+                [side]:         0,
+                top:            0,
+                bottom:         0,
+                width:          "16px",
+                display:        "flex",
+                flexDirection:  "column",
+                alignItems:     "center",
+                justifyContent: "space-around",
+                padding:        "12px 0",
+                zIndex:         10,
+                background:     FILM_BASE,
+              }}
+            >
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="film-hole" />
+              ))}
+            </div>
           ))}
-        </div>
-        {/* Film holes — right */}
-        <div className="absolute right-0 top-0 bottom-0 w-5 flex flex-col items-center justify-around py-3 z-10">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="film-hole" />
-          ))}
-        </div>
 
-        {/* Inner content */}
-        <div className="mx-5 flex flex-col">
-          {/* Header */}
-          <div className="text-center py-3 border-b border-warm-brown/20">
-            <p className="font-serif text-gold text-sm font-bold tracking-wider uppercase">
-              CitoFoto
-            </p>
-            <p className="font-sans text-warm-brown/60 text-[9px] tracking-[0.2em] uppercase mt-0.5">
-              Retro Photo Booth
-            </p>
-          </div>
+          {/* ── Inner content (clear of sprocket gutters) ── */}
+          <div style={{ margin: "0 16px" }}>
 
-          {/* Photos */}
-          <div className="flex flex-col gap-1.5 py-2">
-            {photos.map((photo, i) => (
-              <div
-                key={i}
-                className="relative overflow-hidden"
-                style={{ animationDelay: `${i * 120}ms`, animationFillMode: "both" }}
+            {/* Header */}
+            <div
+              style={{
+                textAlign:    "center",
+                padding:      "10px 4px 8px",
+                borderBottom: "0.5px solid rgba(201,168,76,0.15)",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily:    "Georgia, 'Times New Roman', serif",
+                  color:         GOLD,
+                  fontSize:      "clamp(11px, 2.8vw, 14px)",
+                  fontWeight:    "bold",
+                  letterSpacing: "0.06em",
+                  margin:        0,
+                  lineHeight:    1.2,
+                }}
               >
-                <div className="relative photo-vignette">
+                CitoFoto
+              </p>
+              <p
+                style={{
+                  fontFamily:    "monospace",
+                  color:         "rgba(180,120,55,0.42)",
+                  fontSize:      "clamp(6.5px, 1.6vw, 8.5px)",
+                  letterSpacing: "0.22em",
+                  margin:        "3px 0 0",
+                  textTransform: "uppercase",
+                }}
+              >
+                {dateStr}
+              </p>
+            </div>
+
+            {/* Photo frames */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "5px 0" }}>
+              {photos.map((photo, i) => (
+                <div
+                  key={i}
+                  className="frame-in"
+                  style={{
+                    position:         "relative",
+                    overflow:         "hidden",
+                    animationDelay:   `${0.1 + i * 0.09}s`,
+                    animationFillMode: "both",
+                  }}
+                >
+                  {/* B&W via SVG feColorMatrix — no CSS grayscale */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photo}
-                    alt={`Photo ${i + 1}`}
-                    className="w-full block bw-photo"
-                    style={{ aspectRatio: "3/4", objectFit: "cover" }}
+                    alt={`Frame ${i + 1}`}
+                    style={{
+                      width:       "100%",
+                      display:     "block",
+                      aspectRatio: "3/4",
+                      objectFit:   "cover",
+                      filter:      "url(#bw-film)",
+                    }}
                   />
-                  <span className="absolute top-1 left-1 bg-black/60 text-gold text-[9px] font-mono font-bold w-4 h-4 flex items-center justify-center rounded-sm z-10">
+
+                  {/* Per-frame vignette */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position:   "absolute",
+                      inset:      0,
+                      background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)",
+                      zIndex:     2,
+                      pointerEvents: "none",
+                    }}
+                  />
+
+                  {/* Per-frame grain — feTurbulence 0.75 / 4oct, overlay at 8% */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position:        "absolute",
+                      inset:           0,
+                      backgroundImage: GRAIN_URI,
+                      backgroundSize:  "200px 200px",
+                      opacity:         0.08,
+                      mixBlendMode:    "overlay" as React.CSSProperties["mixBlendMode"],
+                      zIndex:          3,
+                      pointerEvents:   "none",
+                    }}
+                  />
+
+                  {/* Frame number badge */}
+                  <span
+                    style={{
+                      position:        "absolute",
+                      top:             "3px",
+                      left:            "3px",
+                      zIndex:          5,
+                      background:      "rgba(0,0,0,0.52)",
+                      color:           GOLD,
+                      fontFamily:      "monospace",
+                      fontSize:        "7px",
+                      fontWeight:      "bold",
+                      width:           "13px",
+                      height:          "13px",
+                      display:         "flex",
+                      alignItems:      "center",
+                      justifyContent:  "center",
+                      borderRadius:    "2px",
+                    }}
+                  >
                     {i + 1}
                   </span>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Footer */}
-          <div className="text-center py-2.5 border-t border-warm-brown/20">
-            <p className="font-sans text-warm-brown/40 text-[8px] tracking-widest uppercase">
-              {new Date().toLocaleDateString("en-GB", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </p>
+            {/* Footer */}
+            <div
+              style={{
+                textAlign:  "center",
+                padding:    "8px 4px 10px",
+                borderTop:  "0.5px solid rgba(201,168,76,0.12)",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily:    "monospace",
+                  color:         "rgba(120,75,25,0.32)",
+                  fontSize:      "clamp(5.5px, 1.3vw, 7px)",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  margin:        0,
+                }}
+              >
+                citofoto.vercel.app
+              </p>
+            </div>
+
           </div>
         </div>
-      </div>
-
-    </div>
-  );
-});
+      </>
+    );
+  }
+);
 
 export default PhotoStrip;

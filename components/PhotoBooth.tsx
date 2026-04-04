@@ -165,80 +165,167 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
   // ── Done screen ──────────────────────────────────────────────────────────────
   if (state === "done" && photos.length === TOTAL_PHOTOS) {
     return (
-      <div className="w-full min-h-screen flex flex-col" style={{ background: CREAM }}>
+      <div className="w-full flex flex-col" style={{ minHeight: "100dvh", background: CREAM }}>
         <GrainTexture id="paper-done" />
         <BoothHeader onBack={handleHome} />
-        <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-10 flex flex-col md:grid md:grid-cols-[auto_1fr] md:gap-14 md:items-start gap-8 relative z-10">
-          <div className="flex justify-center">
-            <PhotoStrip ref={stripRef} photos={photos} />
-          </div>
-          <div className="flex flex-col gap-6 md:pt-2">
-            <div>
-              <h2 className="font-typewriter text-4xl font-semibold leading-tight" style={{ color: BRAND, fontStyle: "italic" }}>
-                Your strip<br />is ready.
-              </h2>
-              <p className="font-sans text-sm mt-2 leading-relaxed" style={{ color: BODY }}>
-                Four poses. One memory.
-              </p>
+
+        {/*
+          Two-column layout:
+          • Mobile (default):  flex-col — strip centred at top, actions below
+          • Desktop (md+):     flex-row — strip fills left, 420px actions sidebar right
+        */}
+        <div className="flex-1 w-full flex flex-col md:flex-row relative z-10">
+
+          {/* ── Left: film strip column ── */}
+          <div
+            className="flex justify-center items-start md:flex-1 overflow-visible"
+            style={{ padding: "3.5rem 2.5rem 1.5rem" }}
+          >
+            {/*
+              strip-enter animation encodes rotate(-6deg) in both keyframe endpoints
+              + animation-fill-mode: both — holds the tilt after the animation.
+              No separate static transform needed.
+            */}
+            <div className="strip-enter" style={{ flexShrink: 0 }}>
+              <PhotoStrip ref={stripRef} photos={photos} />
             </div>
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => stripRef.current?.download()}
-                className="font-sans font-medium text-sm py-3.5 px-6 rounded-xl flex items-center gap-2.5 w-full justify-center transition-opacity hover:opacity-80"
-                style={{ background: BRAND, color: CREAM }}
+          </div>
+
+          {/* ── Right: actions sidebar — full-width mobile, 420px desktop ── */}
+          <div
+            className="flex flex-col px-6 pb-12 pt-2 md:py-14 md:px-10 md:shrink-0 md:w-[420px]"
+            style={{ gap: "20px" }}
+          >
+            <div style={{ display: "contents" }}>
+
+              {/* Headline */}
+              <div className="fade-up" style={{ animationDelay: "150ms" }}>
+                <h2
+                  className="font-typewriter leading-tight"
+                  style={{
+                    color:      BRAND,
+                    fontStyle:  "italic",
+                    fontSize:   "clamp(2rem, 6vw, 3.25rem)",
+                  }}
+                >
+                  Your strip<br />is ready.
+                </h2>
+                <p className="font-sans text-sm mt-2 leading-relaxed" style={{ color: BODY }}>
+                  Four poses. One memory.
+                </p>
+              </div>
+
+              {/* Primary CTA */}
+              <div className="fade-up" style={{ animationDelay: "250ms" }}>
+                <button
+                  onClick={() => stripRef.current?.download()}
+                  className="font-sans font-semibold text-sm py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center transition-opacity hover:opacity-85"
+                  style={{ background: BRAND, color: CREAM }}
+                >
+                  <DownloadIcon /> Save Photo Strip
+                </button>
+              </div>
+
+              {/* Shoot Again + Home row */}
+              <div
+                className="fade-up flex gap-2.5"
+                style={{ animationDelay: "340ms" }}
               >
-                <DownloadIcon /> Save Photo Strip
-              </button>
-              <div className="flex gap-2">
                 <button
                   onClick={handleRetake}
-                  className="font-sans font-medium text-sm py-3 px-5 rounded-xl flex-1 transition-opacity hover:opacity-80"
+                  className="font-sans font-medium text-sm py-3 px-5 rounded-full flex-1 transition-opacity hover:opacity-80"
                   style={{ background: "#C8B0A0", color: "#1A1713" }}
                 >
                   Shoot Again
                 </button>
                 <button
                   onClick={handleHome}
-                  className="font-sans font-medium text-sm py-3 px-5 rounded-xl flex-1 transition-opacity hover:opacity-80"
-                  style={{ background: BRAND_A(0.1), color: BRAND, border: `1px solid ${BRAND_A(0.2)}` }}
+                  className="font-sans font-medium text-sm py-3 px-5 rounded-full flex-1 transition-opacity hover:opacity-80"
+                  style={{
+                    background: BRAND_A(0.08),
+                    color:      BRAND,
+                    border:     `1px solid ${BRAND_A(0.2)}`,
+                  }}
                 >
                   Home
                 </button>
               </div>
-            </div>
-            <div className="pt-5 flex flex-col gap-2" style={{ borderTop: `1px solid ${BRAND_A(0.1)}` }}>
-              <p className="font-sans text-xs font-medium" style={{ color: BRAND }}>Start a Pose &amp; Pass</p>
-              <p className="font-sans text-[11px] leading-relaxed" style={{ color: BODY }}>
-                Share this link with a partner — they&apos;ll pose alongside your ghost and you&apos;ll both get a combined strip.
-              </p>
-              {linkLoading ? (
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: BRAND, borderTopColor: "transparent" }} />
-                  <span className="font-sans text-xs" style={{ color: BODY }}>Generating link…</span>
-                </div>
-              ) : shareLink ? (
-                <>
-                  <div className="rounded-lg px-3 py-2 font-mono text-[10px] break-all leading-relaxed mt-1" style={{ background: BRAND_A(0.05), border: `1px solid ${BRAND_A(0.15)}`, color: BODY }}>
-                    {shareLink}
+
+              {/* Divider */}
+              <div
+                className="fade-up"
+                style={{
+                  borderTop:      `1px solid ${BRAND_A(0.12)}`,
+                  animationDelay: "430ms",
+                }}
+              />
+
+              {/* Pose & Pass section */}
+              <div
+                className="fade-up flex flex-col gap-2"
+                style={{ animationDelay: "520ms" }}
+              >
+                <p
+                  className="font-sans text-xs font-medium uppercase tracking-[0.12em]"
+                  style={{ color: BRAND }}
+                >
+                  Start a Pose &amp; Pass
+                </p>
+                <p className="font-sans text-[11px] leading-relaxed" style={{ color: BODY }}>
+                  Share this link with a partner — they&apos;ll pose alongside your ghost
+                  and you&apos;ll both get a combined strip.
+                </p>
+
+                {linkLoading ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div
+                      className="w-3 h-3 border-2 rounded-full animate-spin"
+                      style={{ borderColor: BRAND, borderTopColor: "transparent" }}
+                    />
+                    <span className="font-sans text-xs" style={{ color: BODY }}>Generating link…</span>
                   </div>
-                  <button
-                    onClick={async () => {
-                      try { await navigator.clipboard.writeText(shareLink); } catch { /* ignore */ }
-                      setCopied(true); setTimeout(() => setCopied(false), 2500);
-                    }}
-                    className="font-sans font-medium text-sm py-3 px-6 rounded-xl w-full transition-opacity hover:opacity-80"
-                    style={{ background: copied ? "#1A1713" : "#C8B0A0", color: copied ? CREAM : "#1A1713" }}
-                  >
-                    {copied ? "✓ Copied!" : "Copy Pose & Pass Link"}
-                  </button>
-                </>
-              ) : null}
+                ) : shareLink ? (
+                  <>
+                    <div
+                      className="rounded-xl px-3 py-2.5 font-mono text-[10px] break-all leading-relaxed mt-0.5"
+                      style={{
+                        background: BRAND_A(0.05),
+                        border:     `1px solid ${BRAND_A(0.14)}`,
+                        color:      BODY,
+                      }}
+                    >
+                      {shareLink}
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try { await navigator.clipboard.writeText(shareLink); } catch { /* ignore */ }
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2500);
+                      }}
+                      className="font-sans font-medium text-sm py-3 px-6 rounded-full w-full transition-opacity hover:opacity-80"
+                      style={{
+                        background: copied ? "#1A1713" : "#C8B0A0",
+                        color:      copied ? CREAM    : "#1A1713",
+                      }}
+                    >
+                      {copied ? "✓ Copied!" : "Copy Pose & Pass Link"}
+                    </button>
+                  </>
+                ) : null}
+              </div>
+
+              {/* Privacy note */}
+              <p
+                className="fade-up font-sans text-xs leading-relaxed"
+                style={{ color: BRAND_A(0.38), animationDelay: "610ms" }}
+              >
+                Your photos never leave your device.
+              </p>
+
             </div>
-            <p className="font-sans text-xs leading-relaxed" style={{ color: BRAND_A(0.4) }}>
-              Your photos never leave your device.
-            </p>
           </div>
         </div>
+
         <canvas ref={canvasRef} className="hidden" />
       </div>
     );
