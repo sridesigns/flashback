@@ -139,7 +139,7 @@ body {
 
 /* Thumbnail slots: fixed compact height on mobile, portrait ratio on desktop */
 .thumb-slot {
-  height: 72px;
+  height: 60px;
 }
 @media (min-width: 768px) {
   .thumb-slot {

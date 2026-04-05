@@ -4,7 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { RotateCcw, Copy } from "lucide-react";
 import { captureFromVideo, captureColorFromVideo, compressForUrl, compressForSegmentation, encodeForUrl, decodeFromUrl } from "@/lib/photoUtils";
 import { uploadBlob, downloadBlob } from "@/lib/blobStore";
-import DuetStrip from "./DuetStrip";
+import DuetStrip, { DuetStripHandle } from "./DuetStrip";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,7 @@ interface DuetBoothProps {
 export default function DuetBooth({ onHome }: DuetBoothProps) {
   const videoRef  = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const stripRef  = useRef<DuetStripHandle>(null);
 
   const [duetState,  setDuetState]  = useState<DuetState>("loading");
   const [role,       setRole]       = useState<DuetRole>("initiator");
@@ -451,18 +452,21 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
 
         <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto md:overflow-hidden">
 
-          {/* Left: DuetStrip tilted */}
+          {/* Left: DuetStrip tilted — overflow:hidden + inner padding gives room for -6deg rotation */}
           <div
-            className="md:w-1/2 flex items-center justify-center overflow-visible"
-            style={{ padding: "2.5rem 2rem", flexShrink: 0 }}
+            className="md:w-1/2 flex items-center justify-center"
+            style={{ padding: "1rem", overflow: "hidden", flexShrink: 0 }}
           >
-            <div className="strip-enter">
-              <DuetStrip
-                p1Photos={leftPhotos}
-                p2Photos={rightPhotos}
-                p1ColorPhotos={leftColorPhotos.length === TOTAL_SHOTS ? leftColorPhotos : undefined}
-                p2ColorPhotos={rightColorPhotos.length === TOTAL_SHOTS ? rightColorPhotos : undefined}
-              />
+            <div style={{ padding: "1.5rem 4rem" }}>
+              <div className="strip-enter">
+                <DuetStrip
+                  ref={stripRef}
+                  p1Photos={leftPhotos}
+                  p2Photos={rightPhotos}
+                  p1ColorPhotos={leftColorPhotos.length === TOTAL_SHOTS ? leftColorPhotos : undefined}
+                  p2ColorPhotos={rightColorPhotos.length === TOTAL_SHOTS ? rightColorPhotos : undefined}
+                />
+              </div>
             </div>
           </div>
 
@@ -525,9 +529,22 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                 </div>
               )}
 
+              {/* Save Strip CTA */}
+              <div className="fade-up" style={{ animationDelay: "310ms" }}>
+                <button
+                  onClick={() => stripRef.current?.download()}
+                  className="font-typewriter font-semibold py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center transition-colors"
+                  style={{ background: "#F2C94C", color: "#1A1713", fontSize: "16px" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#FFDD00")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "#F2C94C")}
+                >
+                  <DownloadIcon /> Save Strip
+                </button>
+              </div>
+
               <div style={{ borderTop: `1px solid ${BRAND_A(0.12)}` }} aria-hidden="true" className="fade-up" />
 
-              <div className="fade-up" style={{ animationDelay: "340ms" }}>
+              <div className="fade-up" style={{ animationDelay: "400ms" }}>
                 <button
                   onClick={handleHome}
                   className="font-sans font-medium text-sm py-3 px-5 rounded-full flex-1 w-full transition-opacity hover:opacity-80"
@@ -559,7 +576,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
       <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-0">
 
         {/* ── Left: fluid camera column ──────────────────────────────────── */}
-        <div className="flex-1 flex flex-col items-center min-h-0 gap-3 px-4 pt-3 pb-4 md:gap-5 md:justify-center md:px-6 md:py-8">
+        <div className="flex-1 flex flex-col items-center min-h-0 gap-2 px-4 pt-2 pb-3 md:gap-5 md:justify-center md:px-6 md:py-8">
 
           {/* Viewfinder */}
           <div
@@ -803,6 +820,16 @@ function GrainTexture({ id }: { id: string }) {
         style={{ backgroundImage: `repeating-linear-gradient(180deg, transparent 0px, transparent 28px, ${BRAND} 28px, ${BRAND} 29px)` }}
       />
     </div>
+  );
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function DownloadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
   );
 }
 

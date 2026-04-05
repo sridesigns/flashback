@@ -216,8 +216,8 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
               <div className="fade-up" style={{ animationDelay: "250ms" }}>
                 <button
                   onClick={() => stripRef.current?.download()}
-                  className="font-typewriter font-medium text-sm py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center"
-                  style={{ background: "#F2C94C", color: "#1A1713" }}
+                  className="font-typewriter font-semibold py-3.5 px-6 rounded-full flex items-center gap-2.5 w-full justify-center"
+                  style={{ background: "#F2C94C", color: "#1A1713", fontSize: "16px" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#FFDD00")}
                   onMouseLeave={e => (e.currentTarget.style.background = "#F2C94C")}
                 >
