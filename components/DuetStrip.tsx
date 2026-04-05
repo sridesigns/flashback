@@ -132,7 +132,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
       const gap      = 8;
       const headerH  = 60;
       const footerH  = padding;
-      const sidebarW = 28;
+      const sidebarW = 22;
       const holeW    = 6;
       const holeH    = 9;
       const holesN   = 5;
@@ -304,11 +304,11 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
           </defs>
         </svg>
 
-        {/* Film strip shell — width uses vh so strip height scales with viewport */}
+        {/* Film strip shell — same width as PhotoStrip */}
         <div
           style={{
             position:     "relative",
-            width:        "clamp(110px, 14vh, 140px)",
+            width:        "clamp(130px, 14vw, 150px)",
             background:   FILM_BASE,
             borderRadius: "3px",
             overflow:     "hidden",
@@ -325,7 +325,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
                 [side]:         0,
                 top:            0,
                 bottom:         0,
-                width:          "16px",
+                width:          "12px",
                 display:        "flex",
                 flexDirection:  "column",
                 alignItems:     "center",
@@ -342,7 +342,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
           ))}
 
           {/* Inner content */}
-          <div style={{ margin: "0 16px" }}>
+          <div style={{ margin: "0 12px" }}>
 
             {/* Header */}
             <div style={{ textAlign: "center", padding: "10px 4px 8px", borderBottom: "0.5px solid rgba(201,168,76,0.15)" }}>

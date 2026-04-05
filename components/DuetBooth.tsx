@@ -457,7 +457,7 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
             className="md:w-1/2 flex items-center justify-center"
             style={{ padding: "1rem", overflow: "hidden", flexShrink: 0 }}
           >
-            <div style={{ padding: "1.5rem 4rem" }}>
+            <div style={{ padding: "1.5rem 5rem" }}>
               <div className="strip-enter">
                 <DuetStrip
                   ref={stripRef}
