@@ -263,7 +263,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
           ref={stripRef}
           style={{
             position:     "relative",
-            width:        "clamp(130px, 14vw, 150px)",
+            width:        "clamp(100px, 15vh, 150px)",
             background:   FILM_BASE,
             borderRadius: "3px",
             overflow:     "hidden",

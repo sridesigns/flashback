@@ -311,12 +311,12 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
         <GrainTexture id="grain-duet-p1" />
         <BoothHeader onBack={handleHome} />
 
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto md:overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto">
 
           {/* Left: 2×2 photo grid, tilted */}
           <div
-            className="md:w-1/2 flex items-center justify-center overflow-visible"
-            style={{ padding: "2.5rem 2rem" }}
+            className="md:w-1/2 flex items-center justify-center"
+            style={{ padding: "2.5rem 5rem", overflow: "visible" }}
           >
             <div className="strip-enter" style={{ flexShrink: 0 }}>
               <div
@@ -450,14 +450,14 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
         <GrainTexture id="grain-duet-final" />
         <BoothHeader onBack={handleHome} />
 
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto md:overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto">
 
-          {/* Left: DuetStrip tilted — overflow:hidden + inner padding gives room for -6deg rotation */}
+          {/* Left: DuetStrip tilted */}
           <div
             className="md:w-1/2 flex items-center justify-center"
-            style={{ padding: "1rem", overflow: "hidden", flexShrink: 0 }}
+            style={{ padding: "2.5rem 5rem", overflow: "visible", flexShrink: 0 }}
           >
-            <div style={{ padding: "1.5rem 5rem" }}>
+            <div>
               <div className="strip-enter">
                 <DuetStrip
                   ref={stripRef}
@@ -576,13 +576,14 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
       <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-0">
 
         {/* ── Left: fluid camera column ──────────────────────────────────── */}
-        <div className="flex-1 flex flex-col items-center min-h-0 gap-2 px-4 pt-2 pb-3 md:gap-5 md:justify-center md:px-6 md:py-8">
+        <div className="flex-1 flex flex-col items-center min-h-0 gap-2 px-4 pt-2 pb-3 md:gap-4 md:justify-center md:px-6 md:py-4">
 
           {/* Viewfinder */}
           <div
-            className="relative w-full mx-auto overflow-hidden rounded-2xl flex-1 min-h-0 md:flex-none md:aspect-[3/4]"
+            className="relative w-full mx-auto overflow-hidden rounded-2xl flex-1 min-h-0"
             style={{
               maxWidth:  "min(420px, 100%)",
+              maxHeight: "min(560px, calc(100dvh - 240px))",
               background:"#E8E4DE",
               border:    `1.5px solid ${BRAND_A(0.2)}`,
               boxShadow: `0 6px 32px ${BRAND_A(0.08)}`,

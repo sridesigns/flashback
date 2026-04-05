@@ -137,15 +137,9 @@ body {
   background: #FDFCF7;
 }
 
-/* Thumbnail slots: fixed compact height on mobile, portrait ratio on desktop */
+/* Thumbnail slots: fixed height on all screen sizes */
 .thumb-slot {
   height: 60px;
-}
-@media (min-width: 768px) {
-  .thumb-slot {
-    height: auto;
-    aspect-ratio: 3 / 4;
-  }
 }
 
 /* Smooth transitions */

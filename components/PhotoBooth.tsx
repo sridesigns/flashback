@@ -174,12 +174,12 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
           • Mobile (default):  flex-col — scrollable
           • Desktop (md+):     flex-row, each 50%, no scroll
         */}
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto md:overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 relative z-10 overflow-y-auto">
 
           {/* ── Left: film strip ── */}
           <div
-            className="md:w-1/2 flex items-center justify-center overflow-visible"
-            style={{ padding: "2.5rem 2rem", flexShrink: 0 }}
+            className="md:w-1/2 flex items-center justify-center"
+            style={{ padding: "2.5rem 5rem", flexShrink: 0, overflow: "visible" }}
           >
             <div className="strip-enter">
               <PhotoStrip ref={stripRef} photos={photos} />
@@ -341,15 +341,16 @@ export default function PhotoBooth({ onHome }: PhotoBoothProps) {
       <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-0">
 
         {/* ── Left: fluid camera column ──────────────────────────────────── */}
-        <div className="flex-1 flex flex-col items-center min-h-0 gap-3 px-4 pt-3 pb-4 md:gap-5 md:justify-center md:px-6 md:py-8">
+        <div className="flex-1 flex flex-col items-center min-h-0 gap-2 px-4 pt-2 pb-3 md:gap-4 md:justify-center md:px-6 md:py-4">
 
           {/* Viewfinder
               Mobile: flex-1 + min-h-0 → fills all remaining space, no fixed ratio
               Desktop: flex-none + aspect-[3/4] → fixed portrait ratio */}
           <div
-            className="relative w-full mx-auto overflow-hidden rounded-2xl flex-1 min-h-0 md:flex-none md:aspect-[3/4]"
+            className="relative w-full mx-auto overflow-hidden rounded-2xl flex-1 min-h-0"
             style={{
               maxWidth: "min(420px, 100%)",
+              maxHeight: "min(560px, calc(100dvh - 240px))",
               background: "#E8E4DE",
               border: `1.5px solid ${BRAND_A(0.2)}`,
               boxShadow: `0 6px 32px ${BRAND_A(0.08)}`,
