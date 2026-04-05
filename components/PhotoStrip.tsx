@@ -91,7 +91,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
       const gap       = 8;
       const headerH   = 60;
       const footerH   = padding;     // even bottom padding — no URL text
-      const sidebarW  = 28;          // sprocket gutter width each side
+      const sidebarW  = 14;          // sprocket gutter width each side
       const holeW     = 6;
       const holeH     = 9;
       const holesN    = 5;
@@ -280,7 +280,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
                 [side]:         0,
                 top:            0,
                 bottom:         0,
-                width:          "16px",
+                width:          "8px",
                 display:        "flex",
                 flexDirection:  "column",
                 alignItems:     "center",
@@ -297,7 +297,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
           ))}
 
           {/* ── Inner content (clear of sprocket gutters) ── */}
-          <div style={{ margin: "0 16px" }}>
+          <div style={{ margin: "0 8px" }}>
 
             {/* Header */}
             <div
@@ -415,7 +415,7 @@ const PhotoStrip = forwardRef<PhotoStripHandle, PhotoStripProps>(
             </div>
 
             {/* Even bottom padding — no URL text */}
-            <div style={{ height: "10px" }} />
+            <div style={{ height: "8px" }} />
 
           </div>
         </div>

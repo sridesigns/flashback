@@ -132,7 +132,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
       const gap      = 8;
       const headerH  = 60;
       const footerH  = padding;
-      const sidebarW = 22;
+      const sidebarW = 14;
       const holeW    = 6;
       const holeH    = 9;
       const holesN   = 5;
@@ -325,7 +325,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
                 [side]:         0,
                 top:            0,
                 bottom:         0,
-                width:          "12px",
+                width:          "8px",
                 display:        "flex",
                 flexDirection:  "column",
                 alignItems:     "center",
@@ -342,7 +342,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
           ))}
 
           {/* Inner content */}
-          <div style={{ margin: "0 12px" }}>
+          <div style={{ margin: "0 8px" }}>
 
             {/* Header */}
             <div style={{ textAlign: "center", padding: "10px 4px 8px", borderBottom: "0.5px solid rgba(201,168,76,0.15)" }}>
@@ -381,7 +381,7 @@ const DuetStrip = forwardRef<DuetStripHandle, DuetStripProps>(
             </div>
 
             {/* Even bottom padding */}
-            <div style={{ height: "10px" }} />
+            <div style={{ height: "8px" }} />
 
           </div>
         </div>

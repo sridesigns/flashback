@@ -60,7 +60,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         {/* Logo */}
         <div style={{ padding: "clamp(20px, 3vw, 40px) clamp(20px, 3.5vw, 48px)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/cflogo-cream.svg" alt="CitoFoto" style={{ height: "22px", width: "auto", display: "block" }} />
+          <img src="/cflogo-cream.svg" alt="CitoFoto" style={{ height: "32px", width: "auto", display: "block" }} />
         </div>
 
         {/* Illustration — centered, tilted */}
