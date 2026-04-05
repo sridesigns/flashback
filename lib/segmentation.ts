@@ -238,21 +238,27 @@ export async function composeDuetFrame(
   const p1Bounds = getPersonBounds(p1Img);
   const p2Bounds = getPersonBounds(p2Img);
 
-  // 3. Draw P1 — left half, bottom-aligned
-  const p1Scale  = fitScale(p1Bounds, halfW, H);
-  const p1DrawW  = Math.round(p1Bounds.w * p1Scale);
-  const p1DrawH  = Math.round(p1Bounds.h * p1Scale);
-  const p1X      = Math.round(halfW / 2 - p1DrawW / 2);   // centred in left half
-  const p1Y      = H - p1DrawH;                            // bottom-aligned
+  // 3. Draw P1 — left half, bottom-aligned, clipped to left half
+  const p1Scale = fitScale(p1Bounds, halfW, H);
+  const p1DrawW = Math.round(p1Bounds.w * p1Scale);
+  const p1DrawH = Math.round(p1Bounds.h * p1Scale);
+  const p1X     = Math.round(halfW / 2 - p1DrawW / 2); // centred in left half
+  const p1Y     = H - p1DrawH;                          // bottom-aligned
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, halfW, H); ctx.clip();
   ctx.drawImage(p1Img, p1Bounds.x, p1Bounds.y, p1Bounds.w, p1Bounds.h, p1X, p1Y, p1DrawW, p1DrawH);
+  ctx.restore();
 
-  // 4. Draw P2 — right half, bottom-aligned
-  const p2Scale  = fitScale(p2Bounds, halfW, H);
-  const p2DrawW  = Math.round(p2Bounds.w * p2Scale);
-  const p2DrawH  = Math.round(p2Bounds.h * p2Scale);
-  const p2X      = Math.round(halfW + halfW / 2 - p2DrawW / 2); // centred in right half
-  const p2Y      = H - p2DrawH;                                  // bottom-aligned
+  // 4. Draw P2 — right half, bottom-aligned, clipped to right half
+  const p2Scale = fitScale(p2Bounds, halfW, H);
+  const p2DrawW = Math.round(p2Bounds.w * p2Scale);
+  const p2DrawH = Math.round(p2Bounds.h * p2Scale);
+  const p2X     = Math.round(halfW + halfW / 2 - p2DrawW / 2); // centred in right half
+  const p2Y     = H - p2DrawH;                                  // bottom-aligned
+  ctx.save();
+  ctx.beginPath(); ctx.rect(halfW, 0, halfW, H); ctx.clip();
   ctx.drawImage(p2Img, p2Bounds.x, p2Bounds.y, p2Bounds.w, p2Bounds.h, p2X, p2Y, p2DrawW, p2DrawH);
+  ctx.restore();
 
   // 5. Apply B&W film look to the unified composite
   applyFilmLook(ctx, W, H);

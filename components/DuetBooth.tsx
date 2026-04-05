@@ -622,20 +622,44 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               playsInline muted autoPlay
             />
 
-            {/* Ghost overlay */}
+            {/* Ghost overlay — left half only, fades right so P2 sees their own space */}
             {ghostPhoto && isLive && camReady && (
               <div className="absolute inset-0 z-10 pointer-events-none">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ghostPhoto}
-                  alt="Partner ghost"
-                  className="w-full h-full object-cover"
-                  style={{ opacity: 0.35, filter: "grayscale(100%) contrast(1.1)" }}
+                {/* Mask fades ghost from fully visible at left → transparent by 65% width */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    WebkitMaskImage: "linear-gradient(to right, black 0%, black 35%, transparent 65%)",
+                    maskImage:       "linear-gradient(to right, black 0%, black 35%, transparent 65%)",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ghostPhoto}
+                    alt="Partner ghost"
+                    className="w-full h-full object-cover"
+                    style={{ opacity: 0.45, filter: "grayscale(100%) contrast(1.1)" }}
+                  />
+                </div>
+                {/* Divider line at center */}
+                <div
+                  className="absolute top-0 bottom-0"
+                  style={{
+                    left: "50%",
+                    width: "1px",
+                    background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.3) 20%, rgba(255,255,255,0.3) 80%, transparent)",
+                  }}
                 />
                 <span
                   className="absolute top-2 left-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider"
                 >
-                  👻 PARTNER
+                  👻 P1
+                </span>
+                <span
+                  className="absolute top-2 right-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider"
+                >
+                  YOU →
                 </span>
               </div>
             )}

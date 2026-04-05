@@ -74,20 +74,32 @@ export function captureFromVideo(
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-/** Capture raw COLOR frame — no B&W, for background segmentation. */
+/**
+ * Capture raw COLOR frame — no B&W, for background segmentation.
+ * Crops to portrait 3:4 from the center of the landscape video so that
+ * the person fills most of the output frame (avoids width-capping in
+ * compositing that shrinks people to ~50% height).
+ */
 export function captureColorFromVideo(
   video: HTMLVideoElement,
   facingMode: "user" | "environment",
   quality = 0.80
 ): string | null {
-  const w = video.videoWidth || 640;
-  const h = video.videoHeight || 480;
+  const vW = video.videoWidth  || 640;
+  const vH = video.videoHeight || 480;
+
+  // Portrait 3:4 center-crop: height = full video height, width = height × (3/4)
+  const cropH = vH;
+  const cropW = Math.round(vH * (3 / 4));
+  const cropX = Math.max(0, Math.round((vW - cropW) / 2));
+  const outW  = Math.min(cropW, vW); // guard if video is already narrower
+
   const canvas = document.createElement("canvas");
-  canvas.width = w; canvas.height = h;
+  canvas.width = outW; canvas.height = cropH;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  if (facingMode === "user") { ctx.translate(w, 0); ctx.scale(-1, 1); }
-  ctx.drawImage(video, 0, 0, w, h);
+  if (facingMode === "user") { ctx.translate(outW, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(video, cropX, 0, outW, cropH, 0, 0, outW, cropH);
   return canvas.toDataURL("image/jpeg", quality);
 }
 
@@ -119,20 +131,24 @@ export function compressForUrl(dataUrl: string): Promise<string> {
   });
 }
 
-/** Compress color photo to 480×360 @0.65 for blob upload (segmentation quality). */
+/**
+ * Compress color photo to 360×480 @0.65 for blob upload (segmentation quality).
+ * Portrait 3:4 — matches captureColorFromVideo output so no extra cropping occurs
+ * and the person's full height is preserved.
+ */
 export function compressForSegmentation(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const TW = 480, TH = 360;
+      const TW = 360, TH = 480; // portrait 3:4
       const canvas = document.createElement("canvas");
       canvas.width = TW; canvas.height = TH;
       const ctx = canvas.getContext("2d")!;
       const ir = img.naturalWidth / img.naturalHeight;
-      const tr = TW / TH;
+      const tr = TW / TH; // 0.75
       let sx: number, sy: number, sw: number, sh: number;
       if (ir > tr) { sh = img.naturalHeight; sw = sh * tr; sx = (img.naturalWidth - sw) / 2; sy = 0; }
-      else { sw = img.naturalWidth; sh = sw / tr; sx = 0; sy = (img.naturalHeight - sh) / 2; }
+      else         { sw = img.naturalWidth;  sh = sw / tr; sx = 0; sy = (img.naturalHeight - sh) / 2; }
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, TW, TH);
       resolve(canvas.toDataURL("image/jpeg", 0.65));
     };
