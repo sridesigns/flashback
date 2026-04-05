@@ -150,10 +150,67 @@ export function extractPerson(colorPhotoUrl: string): Promise<string> {
 }
 
 /**
+ * Scan a transparent-background cutout and return the tight bounding box
+ * of non-transparent pixels (i.e. the actual person).
+ */
+function getPersonBounds(
+  img: HTMLImageElement,
+): { x: number; y: number; w: number; h: number } {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+  const { data } = ctx.getImageData(0, 0, c.width, c.height);
+
+  let minX = c.width, maxX = 0, minY = c.height, maxY = 0;
+  for (let y = 0; y < c.height; y++) {
+    for (let x = 0; x < c.width; x++) {
+      if (data[(y * c.width + x) * 4 + 3] > 20) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // Fallback: full frame if no person detected
+  if (maxX <= minX || maxY <= minY) {
+    return { x: 0, y: 0, w: c.width, h: c.height };
+  }
+
+  // 4% padding around tight crop so we don't clip hair/shoulders
+  const padX = Math.round((maxX - minX) * 0.04);
+  const padY = Math.round((maxY - minY) * 0.04);
+  const x = Math.max(0, minX - padX);
+  const y = Math.max(0, minY - padY);
+  return {
+    x,
+    y,
+    w: Math.min(c.width, maxX + padX) - x,
+    h: Math.min(c.height, maxY + padY) - y,
+  };
+}
+
+/**
+ * Fit a person's bounding box into a slot, filling height and capping at slot width.
+ * Returns the draw scale factor.
+ */
+function fitScale(
+  bounds: { w: number; h: number },
+  slotW: number,
+  slotH: number,
+): number {
+  // Fill the slot height; if the person is too wide for the slot, fit by width instead
+  const byHeight = slotH / bounds.h;
+  return bounds.w * byHeight > slotW ? slotW / bounds.w : byHeight;
+}
+
+/**
  * Compose two person cutouts into a single unified frame.
- * Both people are placed on a shared neutral backdrop at 4:3 aspect ratio,
- * positioned naturally side by side (overlapping slightly in center).
- * B&W film look is applied to the unified composite.
+ * P1 occupies the left half, P2 the right half — each tight-cropped to their
+ * actual silhouette, scaled to fill their slot, and bottom-aligned so both
+ * stand at the same ground level. B&W film look is then applied.
  * Returns JPEG data URL.
  */
 export async function composeDuetFrame(
@@ -165,34 +222,39 @@ export async function composeDuetFrame(
     loadImg(p2CutoutUrl),
   ]);
 
-  // Higher-res portrait canvas (3:4) for crisp output
   const W = 600;
   const H = 800;
+  const halfW = W / 2; // 300px per person
 
   const outC = document.createElement("canvas");
   outC.width = W; outC.height = H;
   const ctx = outC.getContext("2d")!;
 
-  // 1. Fill with neutral studio backdrop
+  // 1. Neutral studio backdrop
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Draw P1 — positioned left-of-center, natural scale
-  //    People overlap in the middle like sitting shoulder-to-shoulder
-  const p1H = H;
-  const p1W = Math.round(p1Img.naturalWidth * (p1H / p1Img.naturalHeight));
-  const p1X = Math.round(W * 0.40 - p1W * 0.5); // center of P1 at 40%
-  const p1Y = 0;
-  ctx.drawImage(p1Img, p1X, p1Y, p1W, p1H);
+  // 2. Find tight bounding box for each person cutout
+  const p1Bounds = getPersonBounds(p1Img);
+  const p2Bounds = getPersonBounds(p2Img);
 
-  // 3. Draw P2 — positioned right-of-center, overlapping P1
-  const p2H = H;
-  const p2W = Math.round(p2Img.naturalWidth * (p2H / p2Img.naturalHeight));
-  const p2X = Math.round(W * 0.60 - p2W * 0.5); // center of P2 at 60%
-  const p2Y = 0;
-  ctx.drawImage(p2Img, p2X, p2Y, p2W, p2H);
+  // 3. Draw P1 — left half, bottom-aligned
+  const p1Scale  = fitScale(p1Bounds, halfW, H);
+  const p1DrawW  = Math.round(p1Bounds.w * p1Scale);
+  const p1DrawH  = Math.round(p1Bounds.h * p1Scale);
+  const p1X      = Math.round(halfW / 2 - p1DrawW / 2);   // centred in left half
+  const p1Y      = H - p1DrawH;                            // bottom-aligned
+  ctx.drawImage(p1Img, p1Bounds.x, p1Bounds.y, p1Bounds.w, p1Bounds.h, p1X, p1Y, p1DrawW, p1DrawH);
 
-  // 4. Apply B&W film look to the unified composite
+  // 4. Draw P2 — right half, bottom-aligned
+  const p2Scale  = fitScale(p2Bounds, halfW, H);
+  const p2DrawW  = Math.round(p2Bounds.w * p2Scale);
+  const p2DrawH  = Math.round(p2Bounds.h * p2Scale);
+  const p2X      = Math.round(halfW + halfW / 2 - p2DrawW / 2); // centred in right half
+  const p2Y      = H - p2DrawH;                                  // bottom-aligned
+  ctx.drawImage(p2Img, p2Bounds.x, p2Bounds.y, p2Bounds.w, p2Bounds.h, p2X, p2Y, p2DrawW, p2DrawH);
+
+  // 5. Apply B&W film look to the unified composite
   applyFilmLook(ctx, W, H);
 
   return outC.toDataURL("image/jpeg", 0.92);
