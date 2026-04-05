@@ -224,7 +224,6 @@ export async function composeDuetFrame(
 
   const W = 600;
   const H = 800;
-  const halfW = W / 2; // 300px per person
 
   const outC = document.createElement("canvas");
   outC.width = W; outC.height = H;
@@ -234,31 +233,37 @@ export async function composeDuetFrame(
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Find tight bounding box for each person cutout
+  // 2. Tight bounds for each person cutout
   const p1Bounds = getPersonBounds(p1Img);
   const p2Bounds = getPersonBounds(p2Img);
 
-  // 3. Draw P1 — left half, bottom-aligned, clipped to left half
-  const p1Scale = fitScale(p1Bounds, halfW, H);
+  // 3. Scale each person to fill ~82% of canvas height.
+  //    Cap single-person width at 72% of canvas so neither dominates.
+  //    Both persons end up at comparable, large scales.
+  const TARGET_H   = H * 0.82;   // 656px
+  const MAX_DRAW_W = W * 0.72;   // 432px
+
+  function personScale(b: { w: number; h: number }): number {
+    const byH = TARGET_H / b.h;
+    return b.w * byH > MAX_DRAW_W ? MAX_DRAW_W / b.w : byH;
+  }
+
+  // 4. Draw P1 — centred at 35% of canvas width, bottom-aligned
+  const p1Scale = personScale(p1Bounds);
   const p1DrawW = Math.round(p1Bounds.w * p1Scale);
   const p1DrawH = Math.round(p1Bounds.h * p1Scale);
-  const p1X     = Math.round(halfW / 2 - p1DrawW / 2); // centred in left half
-  const p1Y     = H - p1DrawH;                          // bottom-aligned
-  ctx.save();
-  ctx.beginPath(); ctx.rect(0, 0, halfW, H); ctx.clip();
+  const p1X     = Math.round(W * 0.35) - Math.round(p1DrawW / 2);
+  const p1Y     = H - p1DrawH;
   ctx.drawImage(p1Img, p1Bounds.x, p1Bounds.y, p1Bounds.w, p1Bounds.h, p1X, p1Y, p1DrawW, p1DrawH);
-  ctx.restore();
 
-  // 4. Draw P2 — right half, bottom-aligned, clipped to right half
-  const p2Scale = fitScale(p2Bounds, halfW, H);
+  // 5. Draw P2 on top — centred at 65% of canvas width, bottom-aligned.
+  //    Overlaps P1 in the middle → natural "side by side together" look.
+  const p2Scale = personScale(p2Bounds);
   const p2DrawW = Math.round(p2Bounds.w * p2Scale);
   const p2DrawH = Math.round(p2Bounds.h * p2Scale);
-  const p2X     = Math.round(halfW + halfW / 2 - p2DrawW / 2); // centred in right half
-  const p2Y     = H - p2DrawH;                                  // bottom-aligned
-  ctx.save();
-  ctx.beginPath(); ctx.rect(halfW, 0, halfW, H); ctx.clip();
+  const p2X     = Math.round(W * 0.65) - Math.round(p2DrawW / 2);
+  const p2Y     = H - p2DrawH;
   ctx.drawImage(p2Img, p2Bounds.x, p2Bounds.y, p2Bounds.w, p2Bounds.h, p2X, p2Y, p2DrawW, p2DrawH);
-  ctx.restore();
 
   // 5. Apply B&W film look to the unified composite
   applyFilmLook(ctx, W, H);

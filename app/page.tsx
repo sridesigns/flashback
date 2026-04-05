@@ -54,7 +54,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
 
       {/* ── Left panel — Terracotta ── */}
       <div
-        className="md:w-[48%] flex flex-col relative left-panel-height"
+        className="md:w-[48%] flex flex-col relative left-panel-height overflow-hidden"
         style={{ background: "#E8593C" }}
       >
         {/* Logo */}
@@ -63,16 +63,19 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
           <img src="/cflogo-cream.svg" alt="CitoFoto" style={{ height: "32px", width: "auto", display: "block" }} />
         </div>
 
-        {/* Illustration — centered, tilted */}
-        <div className="flex-1 flex items-center justify-center overflow-hidden"
-          style={{ padding: "0 clamp(16px, 4vw, 56px) clamp(24px, 4vh, 56px)" }}>
+        {/* Illustration — centered, tilted
+            overflow:visible so the -15deg rotation corners aren't clipped;
+            panel itself provides the outer bound */}
+        <div className="flex-1 flex items-center justify-center"
+          style={{ padding: "clamp(8px, 2vh, 32px) clamp(16px, 4vw, 56px) clamp(16px, 3vh, 48px)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/illustration.png"
             alt="Film strip sketch illustration"
             className="illus-float w-auto object-contain select-none"
             style={{
-              maxHeight: "clamp(220px, 62vh, 780px)",
+              maxHeight: "clamp(160px, 46vh, 720px)",
+              maxWidth:  "100%",
               filter: "drop-shadow(0 20px 56px rgba(0,0,0,0.22))",
             }}
             draggable={false}

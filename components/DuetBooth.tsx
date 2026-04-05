@@ -261,8 +261,12 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
     startCamera(facingMode);
   }, [facingMode, startCamera]);
 
-  const ghostPhoto = role === "partner" && leftPhotos.length > 0
-    ? leftPhotos[Math.min(currentShot, leftPhotos.length - 1)]
+  // Prefer portrait color photos (captureColorFromVideo → 3:4 crop, less zoomed)
+  // over the landscape B&W photos for a more accurate ghost reference.
+  const ghostPhoto = role === "partner" && (leftColorPhotos.length > 0 || leftPhotos.length > 0)
+    ? (leftColorPhotos.length > 0
+        ? leftColorPhotos[Math.min(currentShot, leftColorPhotos.length - 1)]
+        : leftPhotos[Math.min(currentShot, leftPhotos.length - 1)])
     : null;
 
   const isLive = duetState === "camera" || duetState === "countdown";
@@ -622,45 +626,61 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               playsInline muted autoPlay
             />
 
-            {/* Ghost overlay — left half only, fades right so P2 sees their own space */}
+            {/* Ghost overlay — true left-half box so P2 sees clear right-side space */}
             {ghostPhoto && isLive && camReady && (
               <div className="absolute inset-0 z-10 pointer-events-none">
-                {/* Mask fades ghost from fully visible at left → transparent by 65% width */}
+
+                {/* Hard left-half container — clips ghost strictly to 50% width */}
                 <div
                   style={{
                     position: "absolute",
-                    inset: 0,
-                    WebkitMaskImage: "linear-gradient(to right, black 0%, black 35%, transparent 65%)",
-                    maskImage:       "linear-gradient(to right, black 0%, black 35%, transparent 65%)",
+                    left: 0, top: 0, bottom: 0,
+                    width: "50%",
+                    overflow: "hidden",
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={ghostPhoto}
                     alt="Partner ghost"
-                    className="w-full h-full object-cover"
-                    style={{ opacity: 0.45, filter: "grayscale(100%) contrast(1.1)" }}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      objectPosition: "center",
+                      opacity: 0.42,
+                      filter: "grayscale(100%) contrast(1.05)",
+                    }}
+                  />
+                  {/* Soft right-edge fade so ghost doesn't hard-cut at 50% */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "linear-gradient(to right, transparent 55%, rgba(232,228,222,0.92) 100%)",
+                    }}
                   />
                 </div>
-                {/* Divider line at center */}
+
+                {/* Subtle centre divider */}
                 <div
-                  className="absolute top-0 bottom-0"
                   style={{
-                    left: "50%",
+                    position: "absolute",
+                    left: "50%", top: 0, bottom: 0,
                     width: "1px",
-                    background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.3) 20%, rgba(255,255,255,0.3) 80%, transparent)",
+                    background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.28) 20%, rgba(255,255,255,0.28) 80%, transparent)",
                   }}
                 />
-                <span
-                  className="absolute top-2 left-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider"
-                >
+
+                <span className="absolute top-2 left-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider">
                   👻 P1
                 </span>
-                <span
-                  className="absolute top-2 right-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider"
-                >
+                <span className="absolute top-2 right-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider">
                   YOU →
                 </span>
+
               </div>
             )}
 
