@@ -209,21 +209,20 @@ function fitScale(
 /**
  * Compose two person cutouts into a single unified frame.
  *
- * Approach: full-frame z-stack
- * ─────────────────────────────
- * Both cutouts are kept at their natural frame proportions (no tight-crop
- * rescaling that makes one person look larger than the other).  Each is
- * scaled to the same PERSON_W = 75% of canvas width.  Because both sources
- * are 3:4 portrait (360×480 or 540×720), this always yields the same draw
- * height for both persons — consistent, equal sizing.
+ * Approach: height-scale + person-centre positioning
+ * ───────────────────────────────────────────────────
+ * Each cutout is scaled so its HEIGHT fills the canvas (scale = H / src.h).
+ * For any 3:4 portrait source this also makes drawW === W — both persons
+ * end up at EXACTLY the same absolute pixel scale, guaranteed.
  *
- *   P1  → left-aligned  (x = 0,        right edge at 450)
- *   P2  → right-aligned (x = 150, right edge at canvas edge)
- *   Overlap zone = x 150–450 (300 px) — P2 drawn on top (z-stacked)
+ * We then use getPersonBounds() to find where the actual person is inside
+ * their cutout, and SHIFT the draw so their centre lands at a fixed target
+ * canvas position:
+ *   P1 person centre → (W × 0.30, H × 0.50)   ← left  side
+ *   P2 person centre → (W × 0.70, H × 0.50)   ← right side
  *
- * Transparent background pixels in the cutouts show the neutral backdrop,
- * so where P2's background is transparent the backdrop (not P1's body) shows
- * through — clean segmentation edges.
+ * P2 is drawn on top (z-stacked). Where P2's segmentation is transparent
+ * (left/background side), P1 shows through — creating natural depth.
  */
 export async function composeDuetFrame(
   p1CutoutUrl: string,
@@ -245,32 +244,43 @@ export async function composeDuetFrame(
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Fixed person width — both persons scaled to the same width so their
-  //    apparent size is determined by how large they were in their own frame,
-  //    not by arbitrary normalization.
-  //    75 % of W = 450 px.  For a 3:4 portrait source the resulting draw
-  //    height = 450 × (4/3) = 600 px  (75 % of canvas height) for both persons.
-  const PERSON_W = Math.round(W * 0.75); // 450 px
+  /**
+   * Draw one person cutout so their detected person-centre lands exactly
+   * at (targetCX, targetCY) in the canvas.
+   */
+  function drawPersonAtTarget(
+    img: HTMLImageElement,
+    targetCX: number,
+    targetCY: number,
+  ): void {
+    // Scale to canvas height — for 3:4 portrait sources drawW === W
+    const scale  = H / img.naturalHeight;
+    const drawW  = Math.round(img.naturalWidth  * scale);
+    // drawH = H (fills canvas height exactly)
 
-  // 3. P1 — left-aligned, bottom-aligned
-  const p1DrawW = PERSON_W;
-  const p1DrawH = Math.round(p1Img.naturalHeight * (PERSON_W / p1Img.naturalWidth));
-  ctx.drawImage(
-    p1Img,
-    0, 0, p1Img.naturalWidth, p1Img.naturalHeight,
-    0, H - p1DrawH, p1DrawW, p1DrawH,
-  );
+    // Locate person's centre in the scaled space
+    const bounds    = getPersonBounds(img);
+    const personCX  = (bounds.x + bounds.w / 2) * scale;
+    const personCY  = (bounds.y + bounds.h / 2) * scale;
 
-  // 4. P2 — right-aligned, bottom-aligned, drawn on top (z-stacked in front)
-  const p2DrawW = PERSON_W;
-  const p2DrawH = Math.round(p2Img.naturalHeight * (PERSON_W / p2Img.naturalWidth));
-  ctx.drawImage(
-    p2Img,
-    0, 0, p2Img.naturalWidth, p2Img.naturalHeight,
-    W - p2DrawW, H - p2DrawH, p2DrawW, p2DrawH,
-  );
+    // Shift so the person centre aligns with the target canvas coordinate
+    const drawX = Math.round(targetCX - personCX);
+    const drawY = Math.round(targetCY - personCY);
 
-  // 5. Apply B&W film look
+    ctx.drawImage(
+      img,
+      0, 0, img.naturalWidth, img.naturalHeight,
+      drawX, drawY, drawW, H,
+    );
+  }
+
+  // 2. P1 — person centred at left third (30 %, 50 %)
+  drawPersonAtTarget(p1Img, W * 0.30, H * 0.50);
+
+  // 3. P2 — person centred at right third (70 %, 50 %), drawn on top
+  drawPersonAtTarget(p2Img, W * 0.70, H * 0.50);
+
+  // 4. B&W film look
   applyFilmLook(ctx, W, H);
 
   return outC.toDataURL("image/jpeg", 0.92);

@@ -626,34 +626,39 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               playsInline muted autoPlay
             />
 
-            {/* Ghost overlay — full viewfinder, shows P1 exactly as they
-                appeared in their own viewfinder so P2 can mirror/complement
-                their position. Portrait color source (leftColorPhotos) avoids
-                the zoomed-face problem of the landscape B&W source. */}
+            {/* Ghost overlay — P1 shown in the LEFT ~40% of the viewfinder so
+                P2 can see P1's position and scale, while their OWN live view
+                is fully visible on the right side. Portrait color source
+                (leftColorPhotos) preserves P1's actual framing. */}
             {ghostPhoto && isLive && camReady && (
               <div className="absolute inset-0 z-10 pointer-events-none">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={ghostPhoto}
-                  alt="Partner ghost"
-                  className="w-full h-full"
-                  style={{
-                    objectFit: "cover",
-                    objectPosition: "center",
-                    opacity: 0.30,
-                    filter: "grayscale(100%) contrast(1.05)",
-                  }}
-                />
-                {/* Right-half tint: subtle cue for P2 to move to the right */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(to right, transparent 45%, rgba(232,228,222,0.18) 100%)",
-                  }}
-                />
+                {/* P1 ghost — contained in left 42% of the viewfinder */}
+                <div style={{ position: "absolute", left: 0, top: 0, width: "42%", height: "100%", overflow: "hidden" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ghostPhoto}
+                    alt="Partner ghost"
+                    className="w-full h-full"
+                    style={{
+                      objectFit: "cover",
+                      objectPosition: "center top",
+                      opacity: 0.55,
+                      filter: "grayscale(100%) contrast(1.1)",
+                    }}
+                  />
+                  {/* Fade right edge so ghost blends into live view */}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(to right, transparent 50%, rgba(0,0,0,0.7) 100%)",
+                  }} />
+                </div>
+                {/* Subtle left-edge cue so P2 knows the left side is reserved */}
+                <div style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(to right, transparent 38%, transparent 100%)",
+                }} />
                 <span className="absolute bottom-3 left-3 font-mono text-[9px] text-white/60 bg-black/40 px-2 py-1 rounded tracking-wider">
-                  👻 partner — stand to the right
+                  👻 stand to the right
                 </span>
               </div>
             )}
