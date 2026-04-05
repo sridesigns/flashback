@@ -208,10 +208,22 @@ function fitScale(
 
 /**
  * Compose two person cutouts into a single unified frame.
- * P1 occupies the left half, P2 the right half — each tight-cropped to their
- * actual silhouette, scaled to fill their slot, and bottom-aligned so both
- * stand at the same ground level. B&W film look is then applied.
- * Returns JPEG data URL.
+ *
+ * Approach: full-frame z-stack
+ * ─────────────────────────────
+ * Both cutouts are kept at their natural frame proportions (no tight-crop
+ * rescaling that makes one person look larger than the other).  Each is
+ * scaled to the same PERSON_W = 75% of canvas width.  Because both sources
+ * are 3:4 portrait (360×480 or 540×720), this always yields the same draw
+ * height for both persons — consistent, equal sizing.
+ *
+ *   P1  → left-aligned  (x = 0,        right edge at 450)
+ *   P2  → right-aligned (x = 150, right edge at canvas edge)
+ *   Overlap zone = x 150–450 (300 px) — P2 drawn on top (z-stacked)
+ *
+ * Transparent background pixels in the cutouts show the neutral backdrop,
+ * so where P2's background is transparent the backdrop (not P1's body) shows
+ * through — clean segmentation edges.
  */
 export async function composeDuetFrame(
   p1CutoutUrl: string,
@@ -233,39 +245,32 @@ export async function composeDuetFrame(
   ctx.fillStyle = BOOTH_BACKDROP;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Tight bounds for each person cutout
-  const p1Bounds = getPersonBounds(p1Img);
-  const p2Bounds = getPersonBounds(p2Img);
+  // 2. Fixed person width — both persons scaled to the same width so their
+  //    apparent size is determined by how large they were in their own frame,
+  //    not by arbitrary normalization.
+  //    75 % of W = 450 px.  For a 3:4 portrait source the resulting draw
+  //    height = 450 × (4/3) = 600 px  (75 % of canvas height) for both persons.
+  const PERSON_W = Math.round(W * 0.75); // 450 px
 
-  // 3. Scale each person to fill ~82% of canvas height.
-  //    Cap single-person width at 72% of canvas so neither dominates.
-  //    Both persons end up at comparable, large scales.
-  const TARGET_H   = H * 0.82;   // 656px
-  const MAX_DRAW_W = W * 0.72;   // 432px
+  // 3. P1 — left-aligned, bottom-aligned
+  const p1DrawW = PERSON_W;
+  const p1DrawH = Math.round(p1Img.naturalHeight * (PERSON_W / p1Img.naturalWidth));
+  ctx.drawImage(
+    p1Img,
+    0, 0, p1Img.naturalWidth, p1Img.naturalHeight,
+    0, H - p1DrawH, p1DrawW, p1DrawH,
+  );
 
-  function personScale(b: { w: number; h: number }): number {
-    const byH = TARGET_H / b.h;
-    return b.w * byH > MAX_DRAW_W ? MAX_DRAW_W / b.w : byH;
-  }
+  // 4. P2 — right-aligned, bottom-aligned, drawn on top (z-stacked in front)
+  const p2DrawW = PERSON_W;
+  const p2DrawH = Math.round(p2Img.naturalHeight * (PERSON_W / p2Img.naturalWidth));
+  ctx.drawImage(
+    p2Img,
+    0, 0, p2Img.naturalWidth, p2Img.naturalHeight,
+    W - p2DrawW, H - p2DrawH, p2DrawW, p2DrawH,
+  );
 
-  // 4. Draw P1 — centred at 35% of canvas width, bottom-aligned
-  const p1Scale = personScale(p1Bounds);
-  const p1DrawW = Math.round(p1Bounds.w * p1Scale);
-  const p1DrawH = Math.round(p1Bounds.h * p1Scale);
-  const p1X     = Math.round(W * 0.35) - Math.round(p1DrawW / 2);
-  const p1Y     = H - p1DrawH;
-  ctx.drawImage(p1Img, p1Bounds.x, p1Bounds.y, p1Bounds.w, p1Bounds.h, p1X, p1Y, p1DrawW, p1DrawH);
-
-  // 5. Draw P2 on top — centred at 65% of canvas width, bottom-aligned.
-  //    Overlaps P1 in the middle → natural "side by side together" look.
-  const p2Scale = personScale(p2Bounds);
-  const p2DrawW = Math.round(p2Bounds.w * p2Scale);
-  const p2DrawH = Math.round(p2Bounds.h * p2Scale);
-  const p2X     = Math.round(W * 0.65) - Math.round(p2DrawW / 2);
-  const p2Y     = H - p2DrawH;
-  ctx.drawImage(p2Img, p2Bounds.x, p2Bounds.y, p2Bounds.w, p2Bounds.h, p2X, p2Y, p2DrawW, p2DrawH);
-
-  // 5. Apply B&W film look to the unified composite
+  // 5. Apply B&W film look
   applyFilmLook(ctx, W, H);
 
   return outC.toDataURL("image/jpeg", 0.92);

@@ -626,61 +626,35 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
               playsInline muted autoPlay
             />
 
-            {/* Ghost overlay — true left-half box so P2 sees clear right-side space */}
+            {/* Ghost overlay — full viewfinder, shows P1 exactly as they
+                appeared in their own viewfinder so P2 can mirror/complement
+                their position. Portrait color source (leftColorPhotos) avoids
+                the zoomed-face problem of the landscape B&W source. */}
             {ghostPhoto && isLive && camReady && (
               <div className="absolute inset-0 z-10 pointer-events-none">
-
-                {/* Hard left-half container — clips ghost strictly to 50% width */}
-                <div
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={ghostPhoto}
+                  alt="Partner ghost"
+                  className="w-full h-full"
                   style={{
-                    position: "absolute",
-                    left: 0, top: 0, bottom: 0,
-                    width: "50%",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ghostPhoto}
-                    alt="Partner ghost"
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      objectPosition: "center",
-                      opacity: 0.42,
-                      filter: "grayscale(100%) contrast(1.05)",
-                    }}
-                  />
-                  {/* Soft right-edge fade so ghost doesn't hard-cut at 50% */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "linear-gradient(to right, transparent 55%, rgba(232,228,222,0.92) 100%)",
-                    }}
-                  />
-                </div>
-
-                {/* Subtle centre divider */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "50%", top: 0, bottom: 0,
-                    width: "1px",
-                    background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.28) 20%, rgba(255,255,255,0.28) 80%, transparent)",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    opacity: 0.30,
+                    filter: "grayscale(100%) contrast(1.05)",
                   }}
                 />
-
-                <span className="absolute top-2 left-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider">
-                  👻 P1
+                {/* Right-half tint: subtle cue for P2 to move to the right */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to right, transparent 45%, rgba(232,228,222,0.18) 100%)",
+                  }}
+                />
+                <span className="absolute bottom-3 left-3 font-mono text-[9px] text-white/60 bg-black/40 px-2 py-1 rounded tracking-wider">
+                  👻 partner — stand to the right
                 </span>
-                <span className="absolute top-2 right-2 font-mono text-[9px] text-white/70 bg-black/50 px-2 py-0.5 rounded tracking-wider">
-                  YOU →
-                </span>
-
               </div>
             )}
 
