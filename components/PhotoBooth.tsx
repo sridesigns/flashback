@@ -567,9 +567,8 @@ function BoothHeader({ onBack }: { onBack?: () => void }) {
         >
           ← Back
         </button>
-        <span className="font-typewriter text-base font-semibold absolute left-1/2 -translate-x-1/2" style={{ color: BRAND, fontStyle: "italic" }}>
-          CitoFoto
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/cflogo-brand.svg" alt="CitoFoto" className="absolute left-1/2 -translate-x-1/2" style={{ height: "20px", width: "auto" }} />
         <div className="w-14 shrink-0" />
       </div>
     </header>

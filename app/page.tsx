@@ -59,12 +59,8 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
       >
         {/* Logo */}
         <div style={{ padding: "clamp(20px, 3vw, 40px) clamp(20px, 3.5vw, 48px)" }}>
-          <p
-            className="font-sans"
-            style={{ color: "#FDF6EB", fontSize: "clamp(0.65rem, 1.2vw, 0.75rem)", letterSpacing: "0.14em", opacity: 0.9 }}
-          >
-            cito-foto
-          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/cflogo-cream.svg" alt="CitoFoto" style={{ height: "22px", width: "auto", display: "block" }} />
         </div>
 
         {/* Illustration — centered, tilted */}
