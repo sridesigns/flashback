@@ -152,7 +152,7 @@ function LandingPage({ onOpen }: { onOpen: () => void }) {
         {/* Footer — pinned to bottom of right panel */}
         <footer
           className="w-full flex flex-wrap items-center justify-between gap-2 font-sans relative"
-          style={{ padding: "14px clamp(24px, 5vw, 64px)", borderTop: "1px solid rgba(26,23,19,0.08)" }}
+          style={{ padding: "14px clamp(24px, 5vw, 64px)" }}
         >
           <p style={{ color: "#7A6E62", fontSize: "clamp(0.6rem, 1.2vw, 0.68rem)" }}>
             made with ❤️ by sriram venugopal
