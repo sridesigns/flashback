@@ -209,20 +209,19 @@ function fitScale(
 /**
  * Compose two person cutouts into a single unified frame.
  *
- * Approach: height-scale + person-centre positioning
- * ───────────────────────────────────────────────────
+ * Approach: height-scale + person-centre positioning (close-together)
+ * ────────────────────────────────────────────────────────────────────
  * Each cutout is scaled so its HEIGHT fills the canvas (scale = H / src.h).
  * For any 3:4 portrait source this also makes drawW === W — both persons
  * end up at EXACTLY the same absolute pixel scale, guaranteed.
  *
- * We then use getPersonBounds() to find where the actual person is inside
- * their cutout, and SHIFT the draw so their centre lands at a fixed target
- * canvas position:
- *   P1 person centre → (W × 0.30, H × 0.50)   ← left  side
- *   P2 person centre → (W × 0.70, H × 0.50)   ← right side
+ * Targets are kept close to the canvas centre so both people feel like
+ * they are standing together in the same booth:
+ *   P1 person centre → (W × 0.40, H × 0.50)   ← slightly left of centre
+ *   P2 person centre → (W × 0.60, H × 0.50)   ← slightly right of centre
  *
  * P2 is drawn on top (z-stacked). Where P2's segmentation is transparent
- * (left/background side), P1 shows through — creating natural depth.
+ * (background areas), P1 shows through — creating natural depth overlap.
  */
 export async function composeDuetFrame(
   p1CutoutUrl: string,
@@ -254,14 +253,14 @@ export async function composeDuetFrame(
     targetCY: number,
   ): void {
     // Scale to canvas height — for 3:4 portrait sources drawW === W
-    const scale  = H / img.naturalHeight;
-    const drawW  = Math.round(img.naturalWidth  * scale);
+    const scale = H / img.naturalHeight;
+    const drawW = Math.round(img.naturalWidth * scale);
     // drawH = H (fills canvas height exactly)
 
     // Locate person's centre in the scaled space
-    const bounds    = getPersonBounds(img);
-    const personCX  = (bounds.x + bounds.w / 2) * scale;
-    const personCY  = (bounds.y + bounds.h / 2) * scale;
+    const bounds   = getPersonBounds(img);
+    const personCX = (bounds.x + bounds.w / 2) * scale;
+    const personCY = (bounds.y + bounds.h / 2) * scale;
 
     // Shift so the person centre aligns with the target canvas coordinate
     const drawX = Math.round(targetCX - personCX);
@@ -274,11 +273,11 @@ export async function composeDuetFrame(
     );
   }
 
-  // 2. P1 — person centred at left third (30 %, 50 %)
-  drawPersonAtTarget(p1Img, W * 0.30, H * 0.50);
+  // 2. P1 — slightly left of centre (40 %)
+  drawPersonAtTarget(p1Img, W * 0.40, H * 0.50);
 
-  // 3. P2 — person centred at right third (70 %, 50 %), drawn on top
-  drawPersonAtTarget(p2Img, W * 0.70, H * 0.50);
+  // 3. P2 — slightly right of centre (60 %), drawn on top for depth
+  drawPersonAtTarget(p2Img, W * 0.60, H * 0.50);
 
   // 4. B&W film look
   applyFilmLook(ctx, W, H);
