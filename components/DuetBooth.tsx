@@ -639,8 +639,8 @@ export default function DuetBooth({ onHome }: DuetBoothProps) {
                   style={{
                     objectFit: "cover",
                     objectPosition: "center top",
-                    opacity: 0.25,
-                    filter: "grayscale(100%) contrast(1.15) brightness(1.05)",
+                    opacity: 0.38,
+                    filter: "grayscale(100%) contrast(1.2) brightness(1.08)",
                   }}
                 />
                 {/* Subtle right-side brighten — cues P2 to stand on the right */}

@@ -82,12 +82,12 @@ function applyFilmLook(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.globalCompositeOperation = "source-over";
   ctx.globalAlpha = 1;
 
-  // Heavy vignette — deep black corners
-  const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.18, w / 2, h / 2, h * 0.75);
-  vig.addColorStop(0, "rgba(0,0,0,0)");
-  vig.addColorStop(0.5, "rgba(0,0,0,0.15)");
-  vig.addColorStop(0.8, "rgba(0,0,0,0.45)");
-  vig.addColorStop(1, "rgba(0,0,0,0.7)");
+  // Gentle vignette — only darkens extreme corners, leaves subjects clear
+  const vig = ctx.createRadialGradient(w / 2, h * 0.48, h * 0.32, w / 2, h * 0.48, h * 0.92);
+  vig.addColorStop(0,   "rgba(0,0,0,0)");
+  vig.addColorStop(0.65, "rgba(0,0,0,0.06)");
+  vig.addColorStop(0.88, "rgba(0,0,0,0.22)");
+  vig.addColorStop(1,   "rgba(0,0,0,0.42)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, w, h);
 }
@@ -244,8 +244,9 @@ export async function composeDuetFrame(
   ctx.fillRect(0, 0, W, H);
 
   /**
-   * Draw one person cutout so their detected person-centre lands exactly
-   * at (targetCX, targetCY) in the canvas.
+   * Draw one person cutout so their detected person-centre lands at
+   * (targetCX, targetCY), but CLAMPED so the person's visible bounding
+   * box never extends outside the canvas edges.
    */
   function drawPersonAtTarget(
     img: HTMLImageElement,
@@ -255,15 +256,22 @@ export async function composeDuetFrame(
     // Scale to canvas height — for 3:4 portrait sources drawW === W
     const scale = H / img.naturalHeight;
     const drawW = Math.round(img.naturalWidth * scale);
-    // drawH = H (fills canvas height exactly)
 
-    // Locate person's centre in the scaled space
-    const bounds   = getPersonBounds(img);
-    const personCX = (bounds.x + bounds.w / 2) * scale;
-    const personCY = (bounds.y + bounds.h / 2) * scale;
+    // Locate person's actual bounds in scaled space
+    const bounds      = getPersonBounds(img);
+    const personLeft  = bounds.x * scale;
+    const personRight = (bounds.x + bounds.w) * scale;
+    const personCX    = (bounds.x + bounds.w / 2) * scale;
+    const personCY    = (bounds.y + bounds.h / 2) * scale;
 
-    // Shift so the person centre aligns with the target canvas coordinate
-    const drawX = Math.round(targetCX - personCX);
+    // Ideal drawX centred on target
+    let drawX = Math.round(targetCX - personCX);
+
+    // Clamp: keep 16 px breathing room inside canvas on both sides
+    const margin = 16;
+    drawX = Math.min(drawX, Math.round(W - personRight - margin));
+    drawX = Math.max(drawX, Math.round(margin - personLeft));
+
     const drawY = Math.round(targetCY - personCY);
 
     ctx.drawImage(
@@ -273,11 +281,11 @@ export async function composeDuetFrame(
     );
   }
 
-  // 2. P1 — slightly left of centre (40 %)
-  drawPersonAtTarget(p1Img, W * 0.40, H * 0.50);
-
-  // 3. P2 — slightly right of centre (60 %), drawn on top for depth
+  // 2. P2 drawn FIRST (behind), positioned slightly right of centre
   drawPersonAtTarget(p2Img, W * 0.60, H * 0.50);
+
+  // 3. P1 drawn ON TOP (in front), positioned slightly left of centre
+  drawPersonAtTarget(p1Img, W * 0.40, H * 0.50);
 
   // 4. B&W film look
   applyFilmLook(ctx, W, H);
